@@ -1,136 +1,115 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-import os
+from matplotlib import rcParams
 
-# ----------------------------
-# ✅ 1. 스타일 & 한글 폰트 적용
-# ----------------------------
-st.set_page_config(page_title="기후 미션 챌린지", layout="wide")
+# ✅ matplotlib 폰트 설정 (한글 깨짐 방지)
+rcParams['font.family'] = 'DejaVu Sans'
 
-# ✅ 웹 폰트 적용 (UI)
-st.markdown("""
+# ✅ 페이지 기본 설정
+st.set_page_config(page_title="기후 미션 챌린지", page_icon="🌊", layout="wide")
+
+# ✅ CSS 디자인 (배경 이미지 + 글자색)
+page_bg_img = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic&display=swap');
-html, body, [class*="css"] {
-    font-family: 'Nanum Gothic', sans-serif;
-    color: black !important;
-}
-h1, h2, h3, h4 {
-    color: black !important;
-}
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e"); /* 바다 배경 (Unsplash 무료 이미지) */
+    background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e");
     background-size: cover;
 }
-[data-testid="stHeader"] {
+[data-testid="stHeader"], [data-testid="stSidebar"] {
     background: rgba(255, 255, 255, 0.8);
 }
+h1, h2, h3, p, label {
+    color: black !important;
+    font-family: 'Nanum Gothic', sans-serif;
+}
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
 
-# ✅ matplotlib 한글 폰트 설정
-if not os.path.exists("NanumGothic.ttf"):
-    os.system('wget -O NanumGothic.ttf "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-Regular.ttf"')
-
-fm.fontManager.addfont("NanumGothic.ttf")
-plt.rcParams['font.family'] = 'NanumGothic'
-
-# ----------------------------
-# ✅ 2. 데이터 불러오기
-# ----------------------------
-DATA_URL = "https://raw.githubusercontent.com/edukosm/enso_colab_course/main/oni_month_20250821.csv"
-
+# ✅ 데이터 불러오기
 @st.cache_data
 def load_data():
-    df = pd.read_csv(DATA_URL)
-    df.columns = [col.strip() for col in df.columns]
-    df['날짜'] = df['날짜'].str.replace("﻿", "", regex=True)
-    df['date'] = pd.to_datetime(df['날짜'], format='%Y년 %m월', errors='coerce')
+    url = "https://raw.githubusercontent.com/edukosm/enso_colab_course/refs/heads/main/oni_month_20250821.csv"
+    df = pd.read_csv(url)
+    df.columns = df.columns.str.strip()
+    df['날짜'] = df['날짜'].str.replace("﻿", "")
+    df['date'] = pd.to_datetime(df['날짜'], format='%Y년 %m월')
     return df
 
-enso = load_data()
+df = load_data()
 
-# ----------------------------
-# ✅ 3. 세션 상태 (페이지 네비게이션)
-# ----------------------------
+# ✅ 미션 진행 단계
 if "mission" not in st.session_state:
     st.session_state["mission"] = 1
 
-def next_mission():
-    st.session_state["mission"] += 1
+mission = st.session_state["mission"]
 
-# ----------------------------
-# ✅ 4. 미션 페이지 구현
-# ----------------------------
-st.title("🌊 기후 미션 챌린지")
+# ✅ 미션 1: 데이터 탐색
+if mission == 1:
+    st.title("미션 1️⃣: 데이터 탐험가 되기")
+    st.write("다음 표는 해양의 특정 지역에서 측정된 기후 지표입니다. 최근 6개월 데이터를 살펴보고, **가장 낮은 지표값**을 입력하세요.")
 
-# ----------------------------
-# ✅ 미션 1: 데이터 탐험
-# ----------------------------
-if st.session_state["mission"] == 1:
-    st.header("📊 미션 1: 데이터 탐험하기")
-    st.write("아래 데이터는 특정 해양 지수의 월별 값입니다. 최근 12개월 데이터를 확인하세요.")
+    st.dataframe(df.head(12))
 
-    # 최근 12개월 데이터 필터
-    recent = enso.sort_values('date', ascending=False).head(12)
-    st.dataframe(recent[['날짜', 'nino3.4 index', 'ONI index']])
+    min_val = df["nino3.4 index"].min().round(3)
+    answer = st.text_input("가장 낮은 지표값은 무엇일까요? (소수점 3자리까지)")
 
-    st.write("질문: **가장 최근 월의 nino3.4 index 값은 무엇인가요?**")
-    user_answer = st.text_input("정답 입력")
+    if st.button("정답 확인"):
+        if answer.strip() == str(min_val):
+            st.success("정답입니다! 🎉 다음 미션으로 이동하세요.")
+            st.session_state["mission"] = 2
+            st.experimental_rerun()
+        else:
+            st.error("다시 시도해보세요!")
 
-    correct_answer = str(round(recent.iloc[0]['nino3.4 index'], 3))
-
-    if user_answer == correct_answer:
-        st.success("정답입니다! 다음 미션으로 이동하세요.")
-        st.button("다음 미션으로", on_click=next_mission)
-    else:
-        st.info("힌트: 위 데이터 표에서 가장 최근 행을 확인하세요.")
-
-# ----------------------------
 # ✅ 미션 2: 그래프 분석
-# ----------------------------
-elif st.session_state["mission"] == 2:
-    st.header("📈 미션 2: 변화 추세를 시각화하기")
+elif mission == 2:
+    st.title("미션 2️⃣: 그래프에서 패턴 찾기")
+    st.write("아래 그래프에서 **특정 월**을 선택하여 변화 패턴을 분석하세요.")
 
-    st.write("아래 슬라이더로 기간을 조정하여 지수 변화를 확인하세요.")
-    start_year, end_year = st.slider("연도 범위 선택", 2000, 2025, (2015, 2025))
+    start_date = st.date_input("시작 날짜", df['date'].min())
+    end_date = st.date_input("종료 날짜", df['date'].max())
 
-    filtered = enso[(enso['date'].dt.year >= start_year) & (enso['date'].dt.year <= end_year)]
+    filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
 
-    # 그래프
+    st.write(f"선택된 기간 데이터 ({len(filtered)} 개):")
+    st.dataframe(filtered)
+
+    # ✅ 그래프
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(filtered['date'], filtered['nino3.4 index'], label='지수 변화')
-    ax.axhline(0.5, color='r', linestyle='--', label='양의 기준선')
-    ax.axhline(-0.5, color='b', linestyle='--', label='음의 기준선')
-    ax.set_title(f"{start_year}년 ~ {end_year}년 지수 변화")
+    ax.plot(filtered['date'], filtered['nino3.4 index'], marker='o', label="지표 변화")
+    ax.axhline(0.5, color='red', linestyle='--', label="상한선")
+    ax.axhline(-0.5, color='blue', linestyle='--', label="하한선")
+    ax.set_title("기후 지표 변화")
     ax.legend()
     st.pyplot(fig)
 
-    st.write("질문: **그래프에서 양의 기준선(0.5) 이상인 구간이 몇 개월인가요?**")
-    user_answer = st.number_input("정답 입력", step=1)
+    # ✅ 문제
+    st.write("질문: **그래프에서 0.5 이상으로 올라간 첫 번째 월의 연도를 입력하세요.**")
+    answer2 = st.text_input("연도를 입력하세요 (예: 2024)")
 
-    correct_count = (filtered['nino3.4 index'] >= 0.5).sum()
+    correct_year = str(df[df['nino3.4 index'] > 0.5].iloc[0]['date'].year)
 
-    if user_answer == correct_count:
-        st.success("정답입니다! 마지막 미션으로 이동하세요.")
-        st.button("마지막 미션으로", on_click=next_mission)
-    else:
-        st.info("힌트: 그래프에서 빨간 점선을 기준으로 확인하세요.")
+    if st.button("정답 확인"):
+        if answer2.strip() == correct_year:
+            st.success("정답입니다! 🎉 마지막 미션으로 이동하세요.")
+            st.session_state["mission"] = 3
+            st.experimental_rerun()
+        else:
+            st.error("다시 시도해보세요!")
 
-# ----------------------------
-# ✅ 미션 3: 최종 암호 해독
-# ----------------------------
-elif st.session_state["mission"] == 3:
-    st.header("🔐 미션 3: 암호 해독")
+# ✅ 미션 3: 최종 암호 찾기
+elif mission == 3:
+    st.title("미션 3️⃣: 최종 암호 해독")
+    st.write("축하합니다! 마지막 단계입니다. 아래 글자 조각을 조합해 최종 암호를 완성하세요.")
+    st.write("🔑 조각: **E**, **N**, **S**, **O**")
 
-    st.write("""
-    축하합니다! 이제 마지막 단계입니다.  
-    아래 버튼을 눌러 최종 암호를 확인하세요.
-    """)
+    answer3 = st.text_input("최종 암호는?")
 
-    if st.button("최종 암호 보기"):
-        st.success("🎯 최종 암호는: **OCEAN** 🌊")
-
-    st.balloons()
+    if st.button("제출"):
+        if answer3.strip().upper() == "ENSO":
+            st.balloons()
+            st.success("정답! 모든 미션을 완료했습니다! 🎉")
+        else:
+            st.error("틀렸습니다. 다시 시도하세요!")
