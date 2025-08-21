@@ -2,128 +2,189 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
+import os
 
-# ✅ 페이지 설정
-st.set_page_config(page_title="기후 탐험 미션", page_icon="🌍", layout="wide")
+# -----------------------
+# 설정 & 초기 세팅
+# -----------------------
+st.set_page_config(page_title="기후 미션 챌린지", page_icon="🌊", layout="wide")
 
-# ✅ CSS 스타일
-st.markdown("""
+# 배경 이미지 CSS
+page_bg_img = '''
 <style>
-body {
-    background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e');
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e");
     background-size: cover;
-    background-attachment: fixed;
+    background-position: center;
 }
-.block-container {
-    background: rgba(255, 255, 255, 0.85);
+[data-testid="stHeader"] {background-color: rgba(0,0,0,0);}
+[data-testid="stSidebar"] {background-color: rgba(255,255,255,0.8);}
+.mission-box {
+    background-color: rgba(255,255,255,0.8);
     padding: 20px;
-    border-radius: 12px;
-}
-.stButton button {
-    background-color: black !important;
-    color: white !important;
-    font-size: 18px;
-    border-radius: 8px;
-    padding: 10px 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
 }
 </style>
-""", unsafe_allow_html=True)
+'''
+st.markdown(page_bg_img, unsafe_allow_html=True)
 
-# ✅ 데이터 불러오기
-@st.cache_data
-def load_data():
-    df = pd.read_csv("oni_month_20250821.csv")
-    df['날짜'] = pd.to_datetime(df['날짜'].str.replace('﻿',''), format='%Y년 %m월')
-    return df
+# CSV 파일 설정
+STATUS_FILE = "status.csv"
 
-enso = load_data()
+# 팀 진행 상태 파일 초기화
+if not os.path.exists(STATUS_FILE):
+    pd.DataFrame(columns=["team", "stage", "start_time", "end_time"]).to_csv(STATUS_FILE, index=False)
 
-# ✅ 세션 상태 초기화
+# -----------------------
+# 팀 이름 입력
+# -----------------------
 if "team" not in st.session_state:
-    st.session_state.team = None
-if "mission" not in st.session_state:
-    st.session_state.mission = 0
-if "progress" not in st.session_state:
-    st.session_state.progress = {}
-
-# ✅ 팀 이름 입력
-if st.session_state.team is None:
-    st.title("🌍 기후 탐험 미션")
-    st.subheader("팀 이름을 입력하고 시작하세요!")
-    team_name = st.text_input("팀 이름")
-    if st.button("시작하기") and team_name:
-        st.session_state.team = team_name
-        st.session_state.progress[team_name] = {"mission": 0, "time": datetime.now()}
-        st.rerun()
-else:
-    st.title(f"🌍 기후 탐험 - {st.session_state.team}팀")
-
-    # ✅ 미션 페이지
-    mission = st.session_state.mission
-
-    if mission == 0:
-        st.header("미션 1: 데이터 탐험")
-        st.write("다음 표를 보고, 가장 최근 달의 '수온 평균' 값을 입력하세요.")
-        # ✅ 최근 6개월 데이터
-        recent_df = enso.sort_values(by="날짜", ascending=False).head(6)
-        st.dataframe(recent_df)
-
-        answer = st.text_input("가장 최근 달의 수온 평균 값은?")
-        if st.button("제출"):
-            correct = round(recent_df.iloc[0]['nino3.4 수온 평균'], 2)
-            if abs(float(answer) - correct) < 0.1:
-                st.success("정답입니다!")
-                st.session_state.mission += 1
-                st.progress(25)
+    with st.container():
+        st.title("🌊 기후 미션 챌린지")
+        st.markdown('<div class="mission-box"><h3>팀 이름을 입력하세요</h3></div>', unsafe_allow_html=True)
+        team_name = st.text_input("팀 이름", "")
+        if st.button("시작하기", use_container_width=True):
+            if team_name.strip() != "":
+                st.session_state.team = team_name
+                status_df = pd.read_csv(STATUS_FILE)
+                if team_name not in status_df["team"].values:
+                    new_row = pd.DataFrame([{
+                        "team": team_name,
+                        "stage": 0,
+                        "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "end_time": ""
+                    }])
+                    status_df = pd.concat([status_df, new_row], ignore_index=True)
+                    status_df.to_csv(STATUS_FILE, index=False)
                 st.rerun()
-            else:
-                st.error("틀렸습니다. 다시 시도하세요.")
+        st.stop()
 
-    elif mission == 1:
-        st.header("미션 2: 그래프 분석")
-        st.write("아래 슬라이더로 연도를 선택하고, 해당 연도의 수온 변화를 관찰하세요.")
-        years = sorted(enso['날짜'].dt.year.unique())
-        year = st.slider("연도 선택", min_value=min(years), max_value=max(years), value=max(years))
-        filtered = enso[enso['날짜'].dt.year == year]
+# -----------------------
+# 진행 현황 표시
+# -----------------------
+st.title("🌊 기후 미션 챌린지")
+status_df = pd.read_csv(STATUS_FILE)
+st.subheader("📊 팀별 진행 상황")
+st.dataframe(status_df[["team", "stage"]], hide_index=True, use_container_width=True)
 
-        fig = px.line(filtered, x="날짜", y="nino3.4 수온 평균", title=f"{year}년 수온 변화")
-        st.plotly_chart(fig)
+# 현재 팀의 단계
+current_stage = int(status_df.loc[status_df["team"] == st.session_state.team, "stage"].values[0])
 
-        st.write("그래프를 보고, 가장 높은 수온을 입력하세요.")
-        answer = st.text_input("최고 수온 값?")
-        if st.button("제출"):
-            correct = round(filtered['nino3.4 수온 평균'].max(), 2)
-            if abs(float(answer) - correct) < 0.1:
-                st.success("정답입니다!")
-                st.session_state.mission += 1
-                st.progress(50)
-                st.rerun()
-            else:
-                st.error("틀렸습니다.")
+# 데이터 불러오기
+DATA_URL = "https://raw.githubusercontent.com/edukosm/enso_colab_course/refs/heads/main/oni_month_20250821.csv"
+df = pd.read_csv(DATA_URL)
+df['date'] = pd.to_datetime(df['날짜'], format='%Y년 %m월')
 
-    elif mission == 2:
-        st.header("미션 3: 패턴 찾기")
-        st.write("아래 드롭다운에서 월을 선택하고, 해당 월의 평균 수온을 확인하세요.")
-        month = st.selectbox("월 선택", list(range(1, 13)))
-        month_data = enso[enso['날짜'].dt.month == month]
-        avg_temp = round(month_data['nino3.4 수온 평균'].mean(), 2)
-        st.write(f"이 월의 평균 수온은 **{avg_temp}°C** 입니다.")
-        answer = st.text_input("가장 낮은 월 평균 수온은 몇 월일까요?")
-        if st.button("제출"):
-            min_month = enso.groupby(enso['날짜'].dt.month)['nino3.4 수온 평균'].mean().idxmin()
-            if int(answer) == int(min_month):
-                st.success("정답입니다!")
-                st.session_state.mission += 1
-                st.progress(75)
-                st.rerun()
-            else:
-                st.error("틀렸습니다.")
+# -----------------------
+# 미션 함수
+# -----------------------
+def update_stage(stage):
+    status_df = pd.read_csv(STATUS_FILE)
+    status_df.loc[status_df["team"] == st.session_state.team, "stage"] = stage
+    if stage == 5:  # 모든 미션 완료 시
+        status_df.loc[status_df["team"] == st.session_state.team, "end_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    status_df.to_csv(STATUS_FILE, index=False)
+    st.rerun()
 
-    elif mission == 3:
-        st.header("✅ 최종 미션 완료!")
-        st.subheader("팀 순위는?")
-        st.write("아직 로컬 상태에서만 기록됩니다.")
-        st.write(st.session_state.progress)
-        if st.button("처음으로"):
-            st.session_state.mission = 0
-            st.rerun()
+# -----------------------
+# 미션 1
+# -----------------------
+if current_stage == 0:
+    st.markdown('<div class="mission-box"><h3>미션 1: 데이터 탐험</h3>', unsafe_allow_html=True)
+    st.write("아래 표에서 전체 데이터를 보고, **2020년 이후의 평균 지수를 입력하세요.**")
+
+    # 전체 데이터
+    st.dataframe(df, use_container_width=True)
+
+    # 슬라이더로 연도 필터
+    min_year, max_year = int(df['date'].dt.year.min()), int(df['date'].dt.year.max())
+    year_range = st.slider("연도 범위 선택", min_year, max_year, (2020, max_year))
+    filtered_df = df[(df['date'].dt.year >= year_range[0]) & (df['date'].dt.year <= year_range[1])]
+    st.write(f"선택한 기간 데이터 ({year_range[0]}~{year_range[1]})")
+    st.dataframe(filtered_df)
+
+    avg_val = round(filtered_df['지수'].mean(), 2)
+    answer = st.text_input("평균 지수를 소수점 둘째 자리까지 입력:")
+    if st.button("제출"):
+        if answer.strip() == str(avg_val):
+            st.success("정답입니다!")
+            update_stage(1)
+        else:
+            st.error("틀렸습니다. 다시 시도하세요.")
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# -----------------------
+# 미션 2
+# -----------------------
+if current_stage == 1:
+    st.markdown('<div class="mission-box"><h3>미션 2: 데이터 시각화</h3>', unsafe_allow_html=True)
+    st.write("아래 그래프에서 2015~2025년 지수의 **최대값**을 입력하세요.")
+    
+    filtered_df = df[(df['date'].dt.year >= 2015) & (df['date'].dt.year <= 2025)]
+    fig = px.line(filtered_df, x='date', y='지수', title="지수 변화 (2015~2025)")
+    st.plotly_chart(fig, use_container_width=True)
+
+    max_val = round(filtered_df['지수'].max(), 2)
+    answer = st.text_input("최대값을 소수점 둘째 자리까지 입력:")
+    if st.button("제출"):
+        if answer.strip() == str(max_val):
+            st.success("정답입니다!")
+            update_stage(2)
+        else:
+            st.error("틀렸습니다. 다시 시도하세요.")
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# -----------------------
+# 미션 3
+# -----------------------
+if current_stage == 2:
+    st.markdown('<div class="mission-box"><h3>미션 3: 시기 비교</h3>', unsafe_allow_html=True)
+    st.write("2010~2015 평균과 2020~2025 평균을 비교하세요. 어느 기간이 더 높은가요?")
+
+    avg1 = df[(df['date'].dt.year >= 2010) & (df['date'].dt.year <= 2015)]['지수'].mean()
+    avg2 = df[(df['date'].dt.year >= 2020) & (df['date'].dt.year <= 2025)]['지수'].mean()
+
+    st.write("보기: ① 2010~2015 ② 2020~2025")
+    answer = st.radio("어느 기간이 더 높은가요?", ["①", "②"])
+    if st.button("제출"):
+        if (answer == "①" and avg1 > avg2) or (answer == "②" and avg2 > avg1):
+            st.success("정답입니다!")
+            update_stage(3)
+        else:
+            st.error("틀렸습니다. 다시 시도하세요.")
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# -----------------------
+# 미션 4
+# -----------------------
+if current_stage == 3:
+    st.markdown('<div class="mission-box"><h3>미션 4: 최종 미션</h3>', unsafe_allow_html=True)
+    st.write("전체 데이터에서 지수의 **최소값**을 입력하세요.")
+
+    min_val = round(df['지수'].min(), 2)
+    answer = st.text_input("최소값:")
+    if st.button("제출"):
+        if answer.strip() == str(min_val):
+            st.success("정답입니다! 모든 미션 완료!")
+            update_stage(5)
+        else:
+            st.error("틀렸습니다. 다시 시도하세요.")
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# -----------------------
+# 최종 랭킹
+# -----------------------
+if current_stage == 5:
+    st.markdown('<div class="mission-box"><h3>🎉 모든 미션을 완료했습니다!</h3>', unsafe_allow_html=True)
+    status_df = pd.read_csv(STATUS_FILE)
+    completed = status_df[status_df["end_time"] != ""].copy()
+    completed["time_taken"] = pd.to_datetime(completed["end_time"]) - pd.to_datetime(completed["start_time"])
+    completed = completed.sort_values("time_taken")
+    st.subheader("🏆 랭킹")
+    st.dataframe(completed[["team", "time_taken"]], hide_index=True)
+    st.markdown('</div>', unsafe_allow_html=True)
