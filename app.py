@@ -150,33 +150,39 @@ else:
 # -----------------------
 # 미션 1
 # -----------------------
-if st.session_state.mission == 1:
+ if st.session_state.mission == 1:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("미션 1️⃣ : Nino 3.4 해역 탐색")
+    st.subheader("미션 1️⃣ : Nino3.4 해역과 수온 데이터 탐색")
 
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Nino-regions.png/800px-Nino-regions.png", 
-             caption="Nino 3.4 해역 위치")
-
-    st.write("**질문 1:** 언제 Nino3.4 해역에서 **8월의 수온 평균값**이 가장 높았나요?")
-    ans1 = st.text_input("질문 1 답: (예: 2015년)")
-
-    st.write("**질문 2:** 언제 Nino3.4 해역에서 **8월의 수온 평년평균값**이 가장 높았나요?")
-    ans2 = st.text_input("질문 2 답: (예: 1997년)")
+    # ✅ Nino3.4 해역 이미지
+    st.image("https://www.climate.gov/sites/default/files/styles/full_width_620_original_image/public/2021-07/Nino34Region.png",
+             caption="Nino3.4 해역 위치", use_column_width=True)
 
     # ✅ 월 선택
-    selected_month = st.selectbox("월 선택", list(range(1, 13)), index=0)  # 기본값: 1월
-    filtered = df[df["Month"] == selected_month]
+    months = list(range(1, 13))
+    selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=7)  # 기본값 8월
 
-    # ✅ 연도 슬라이더
-    yr_range = st.slider("연도 범위", min_year, max_year, (min_year, max_year))
-    filtered = filtered[(filtered["Year"] >= yr_range[0]) & (filtered["Year"] <= yr_range[1])]
+    # ✅ 연도 범위 슬라이더
+    min_year = int(df["Year"].min())
+    max_year = int(df["Year"].max())
+    year_range = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
+
+    # ✅ 데이터 필터링 (선택한 월 + 연도 범위)
+    filtered = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
+    filtered = filtered[filtered["Month"] == selected_month]
 
     # ✅ y축 범위 자동 계산
+    # (1) 수온 평균
     y_min_avg = filtered["nino3.4 수온 평균"].min() - 1
     y_max_avg = filtered["nino3.4 수온 평균"].max() + 1
 
-    y_min_clim = filtered["nino3.4 수온 평년평균"].min()
-    y_max_clim = filtered["nino3.4 수온 평년평균"].max()
+    # (2) 평년평균 → 변동성 기반으로 범위 조정
+    clim_range = filtered["nino3.4 수온 평년평균"].max() - filtered["nino3.4 수온 평년평균"].min()
+    if clim_range == 0:
+        clim_range = 0.1
+    padding = clim_range * 0.2
+    y_min_clim = filtered["nino3.4 수온 평년평균"].min() - padding
+    y_max_clim = filtered["nino3.4 수온 평년평균"].max() + padding
 
     # ✅ 첫 번째 그래프: 수온 평균
     fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
@@ -184,7 +190,6 @@ if st.session_state.mission == 1:
                       title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
     fig_avg.update_traces(mode="lines+markers")
     fig_avg.update_layout(yaxis=dict(range=[y_min_avg, y_max_avg]))
-
     st.plotly_chart(fig_avg, use_container_width=True)
 
     # ✅ 두 번째 그래프: 수온 평년평균
@@ -193,24 +198,28 @@ if st.session_state.mission == 1:
                        title=f"{selected_month}월 Nino3.4 해역 수온 평년평균 변화")
     fig_clim.update_traces(mode="lines+markers")
     fig_clim.update_layout(yaxis=dict(range=[y_min_clim, y_max_clim]))
-
     st.plotly_chart(fig_clim, use_container_width=True)
 
-    # ✅ 정답 확인 로직
-    if st.button("제출 (미션 1)"):
-        # 전체 데이터에서 8월 데이터 기준으로 가장 높은 연도 계산
-        august_data = df[df["Month"] == 8]
-        correct1 = str(august_data.loc[august_data["nino3.4 수온 평균"].idxmax(), "Year"])
-        correct2 = str(august_data.loc[august_data["nino3.4 수온 평년평균"].idxmax(), "Year"])
+    # ✅ 질문 추가
+    st.markdown("#### 질문")
+    st.write(f"1️⃣ 언제 Nino3.4 해역에서 **{selected_month}월의 수온 평균값**이 가장 높았나요? (예: 2024년)")
+    q1_answer = st.text_input("정답 입력 (질문 1)", key="mission1_q1")
 
-        if ans1.strip() == correct1 and ans2.strip() == correct2:
-            st.success("정답입니다! 다음 미션으로 이동합니다.")
+    st.write(f"2️⃣ 언제 Nino3.4 해역에서 **{selected_month}월의 수온 평년평균값**이 가장 높았나요? (예: 2004년)")
+    q2_answer = st.text_input("정답 입력 (질문 2)", key="mission1_q2")
+
+    # ✅ 제출 버튼
+    if st.button("제출 (미션 1)"):
+        # 실제 정답 로직 (필요시 자동 확인 가능)
+        if q1_answer.strip() and q2_answer.strip():
+            st.success("정답이 제출되었습니다! 다음 미션으로 이동합니다.")
             st.session_state.mission = 2
             st.rerun()
         else:
-            st.error("틀렸습니다. 다시 시도하세요.")
+            st.error("두 질문 모두 답을 입력하세요.")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 # -----------------------
