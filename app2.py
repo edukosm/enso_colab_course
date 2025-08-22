@@ -19,24 +19,68 @@ if "end_time" not in st.session_state:
     st.session_state.end_time = None
 
 # -----------------------
-# 데이터 로드
+# 데이터 로드 (GitHub URL)
 # -----------------------
-@st.cache_data
+@st.cache_data(show_spinner=True)
 def load_data():
-    url = "https://raw.githubusercontent.com/edukosm/enso_colab_course/main/oni_month_20250821.csv"
-    df = pd.read_csv(url, encoding="utf-8-sig")
+    urls = [
+        "https://raw.githubusercontent.com/edukosm/enso_colab_course/main/oni_month_20250821.csv",
+        "https://raw.githubusercontent.com/edukosm/enso_colab_course/refs/heads/main/oni_month_20250821.csv",
+    ]
+    df = None
+    for u in urls:
+        try:
+            df = pd.read_csv(u, encoding="utf-8-sig")
+            break
+        except Exception:
+            continue
     return df
 
 df = load_data()
-df.columns = df.columns.map(lambda c: c.strip())
-df["date"] = pd.to_datetime(df["날짜"], errors="coerce")
+if df is None:
+    st.error("❌ 데이터를 불러올 수 없습니다. GitHub URL을 확인하세요.")
+    st.stop()
+
+# -----------------------
+# 전처리
+# -----------------------
+df.columns = df.columns.map(lambda c: str(c).replace("\ufeff", "").strip())
+
+if "날짜" in df.columns:
+    df["날짜"] = df["날짜"].astype(str).str.replace("\ufeff", "", regex=False).str.strip()
+else:
+    st.error("CSV에 '날짜' 컬럼이 필요합니다.")
+    st.stop()
+
+# 날짜 파싱
+date_parsed = None
+for fmt in ["%Y년 %m월", "%Y-%m", "%Y.%m", "%Y/%m"]:
+    try:
+        date_parsed = pd.to_datetime(df["날짜"], format=fmt, errors="raise")
+        break
+    except Exception:
+        continue
+if date_parsed is None:
+    date_parsed = pd.to_datetime(df["날짜"], errors="coerce")
+df["date"] = date_parsed
+df = df.dropna(subset=["date"]).copy()
 df["Year"] = df["date"].dt.year
 df["Month"] = df["date"].dt.month
-index_col = [c for c in df.columns if "index" in c.lower() or "Anomaly" in c]
-index_col = index_col[0] if index_col else "지수"
-df_display = df[["날짜", index_col, "date", "Year", "Month"]].rename(columns={index_col: "지수"})
-min_year, max_year = int(df_display["Year"].min()), int(df_display["Year"].max())
 
+# 지수 컬럼 자동 선택
+index_candidates = ["nino3.4 index", "ONI index", "Anomaly"]
+index_col = None
+for c in index_candidates:
+    if c in df.columns:
+        index_col = c
+        break
+if index_col is None:
+    st.error("지수 컬럼을 찾지 못했습니다. ('nino3.4 index', 'ONI index', 'Anomaly' 중 하나 필요)")
+    st.stop()
+
+df_display = df[["날짜", index_col, "date", "Year", "Month"]].rename(columns={index_col: "지수"})
+min_year = int(df_display["Year"].min())
+max_year = int(df_display["Year"].max())
 # -----------------------
 # 스타일
 # -----------------------
