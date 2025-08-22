@@ -164,7 +164,7 @@ if st.session_state.mission == 1:
     ans2 = st.text_input("질문 2 답: (예: 1997년)")
 
     # ✅ 월 선택
-    selected_month = st.selectbox("월 선택", list(range(1, 13)), index=7)  # 기본값: 8월
+    selected_month = st.selectbox("월 선택", list(range(1, 13)), index=0)  # 기본값: 1월
     filtered = df[df["Month"] == selected_month]
 
     # ✅ 연도 슬라이더
@@ -175,8 +175,8 @@ if st.session_state.mission == 1:
     y_min_avg = filtered["nino3.4 수온 평균"].min() - 1
     y_max_avg = filtered["nino3.4 수온 평균"].max() + 1
 
-    y_min_clim = filtered["nino3.4 수온 평년평균"].min() - 1
-    y_max_clim = filtered["nino3.4 수온 평년평균"].max() + 1
+    y_min_clim = filtered["nino3.4 수온 평년평균"].min()
+    y_max_clim = filtered["nino3.4 수온 평년평균"].max()
 
     # ✅ 첫 번째 그래프: 수온 평균
     fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
