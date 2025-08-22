@@ -177,12 +177,25 @@ elif st.session_state.mission == 2:
 elif st.session_state.mission == 3:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("미션 3️⃣ : 월별 최대 지수의 연도 찾기")
+
     sel_month = st.selectbox("월 선택", options=sorted(df_display["Month"].unique()))
     md = df_display[df_display["Month"] == sel_month].dropna(subset=["지수"])
+
     if len(md) > 0:
+        # 그래프 추가: 선택한 월의 연도별 지수 변화
+        fig3 = px.line(md, x="Year", y="지수", markers=True,
+                       title=f"{sel_month}월의 연도별 지수 변화")
+        st.plotly_chart(fig3, use_container_width=True)
+
+        # 데이터 테이블 제공
+        st.dataframe(md[["Year", "지수"]])
+
+        # 정답 계산
         max_idx = md["지수"].idxmax()
         max_year_for_month = int(df_display.loc[max_idx, "Year"])
-        a3 = st.text_input(f"{sel_month}월의 최대 지수가 기록된 연도는?")
+
+        st.write(f"질문: {sel_month}월에서 가장 높은 지수를 기록한 연도는?")
+        a3 = st.text_input("정답 입력 (예: 1997)")
         if st.button("제출 (미션 3)"):
             if a3.strip() == str(max_year_for_month):
                 st.success("정답입니다! 다음 미션으로 이동합니다.")
@@ -192,7 +205,9 @@ elif st.session_state.mission == 3:
                 st.error("틀렸습니다. 다시 시도하세요.")
     else:
         st.warning("해당 월에 데이터가 없습니다.")
+
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -----------------------
 # 미션 4 (새로운 분석형)
