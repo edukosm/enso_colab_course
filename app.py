@@ -181,7 +181,7 @@ if st.session_state.mission == 1:
 
     # ✅ 질문 추가 (1개만)
     st.markdown("#### 질문")
-    st.write(f"1️⃣ 언제 Nino3.4 해역에서 **{selected_month}월의 수온 평균값**이 가장 높았나요? (예: 2024년)")
+    st.write(f"1️⃣ 언제 Nino3.4 해역에서 8월의 수온 평균값**이 가장 높았나요? (예: 2024년)")
     q1_answer = st.text_input("정답 입력", key="mission1_q1")
 
     # ✅ 제출 버튼
