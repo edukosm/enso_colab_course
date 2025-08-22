@@ -261,7 +261,7 @@ elif st.session_state.mission == 5:
     code = st.text_input("최종 암호 입력")
     if st.button("암호 해독"):
         if code.strip().upper() == "ENSO":
-            st.success("🎯 암호 해독 성공! 사건의 진실이 밝혀졌습니다!")
+            st.success("🎯 암호 해독 성공! 사건의 진실이 밝혀졌습니다! 전세계 기후를 바꾼것은 바로 ENSO였습니다!")
             st.balloons()
             st.write("🌍 **축하합니다! 당신은 기후의 비밀을 밝혀낸 최고의 수사관입니다.**")
             st.markdown("""
