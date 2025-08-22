@@ -198,7 +198,8 @@ elif st.session_state.mission == 1:
     if st.button("제출 (미션 1)"):
         if q1_answer.strip():
             st.success("정답이 제출되었습니다! 다음 미션으로 이동합니다.")
-            st.session_state.codes.append("E")  # ✅ 코드 지급
+            st.info("이 미션의 암호 코드: **E**")  # ✅ 코드 즉시 표시
+            st.session_state.codes.append("E")
             st.session_state.mission = 2
             st.rerun()
         else:
@@ -234,7 +235,8 @@ elif st.session_state.mission == 2:
             strongest_year = int(filt.loc[filt["지수"].idxmax(), "Year"])
             if a2.strip() == str(strongest_year):
                 st.success("정답입니다! 다음 미션으로 이동합니다.")
-                st.session_state.codes.append("N")  # ✅ 코드 지급
+                st.info("이 미션의 암호 코드: **N**")  # ✅ 코드 즉시 표시
+                st.session_state.codes.append("N")
                 st.session_state.mission = 3
                 st.rerun()
             else:
@@ -268,7 +270,8 @@ elif st.session_state.mission == 3:
             weakest_year = int(filt.loc[filt["지수"].idxmin(), "Year"])
             if a3.strip() == str(weakest_year):
                 st.success("정답입니다! 다음 미션으로 이동합니다.")
-                st.session_state.codes.append("S")  # ✅ 코드 지급
+                st.info("이 미션의 암호 코드: **S**")  # ✅ 코드 즉시 표시
+                st.session_state.codes.append("S")
                 st.session_state.mission = 4
                 st.rerun()
             else:
@@ -307,7 +310,8 @@ elif st.session_state.mission == 4:
         if st.button("제출 (미션 4)"):
             if a4.strip() == str(strongest_year):
                 st.success("정답입니다! 모든 미션을 완료했습니다.")
-                st.session_state.codes.append("O")  # ✅ 마지막 코드 지급
+                st.info("이 미션의 암호 코드: **O**")  # ✅ 코드 즉시 표시
+                st.session_state.codes.append("O")
                 st.session_state.finished = True
                 st.session_state.end_time = time.time()
                 st.rerun()
