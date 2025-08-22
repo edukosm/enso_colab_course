@@ -231,7 +231,11 @@ elif st.session_state.mission == 4:
         # 엘니뇨 / 라니냐 기준선 추가
         fig4.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="엘니뇨 기준 (+0.5)", annotation_position="bottom right")
         fig4.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준 (-0.5)", annotation_position="top right")
+      
+       # Y축 범위 고정 (-3 ~ 3)
+        fig4.update_yaxes(range=[-3, 3])
 
+      
         # 그래프 표시
         st.plotly_chart(fig4, use_container_width=True)
 
