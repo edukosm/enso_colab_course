@@ -152,23 +152,64 @@ else:
 # -----------------------
 if st.session_state.mission == 1:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("미션 1️⃣ : 데이터 탐색하기")
-    st.dataframe(df_display[["날짜", "지수"]])
+    st.subheader("미션 1️⃣ : Nino 3.4 해역 탐색하기")
 
-    yr = st.slider("연도 범위(탐색용)", min_year, max_year, (min_year, max_year))
-    _ = df_display[(df_display["Year"] >= yr[0]) & (df_display["Year"] <= yr[1])]
-    st.write(f"선택 범위 데이터 수: {len(_)}")
+    # 1) Nino 3.4 영역 이미지 표시
+    st.image("https://upload.wikimedia.org/wikipedia/commons/6/68/Nino34_map.png", 
+             caption="Nino 3.4 해역 위치", use_column_width=True)
 
-    st.write("질문: 이 데이터에서 **가장 첫 번째 연도**는 무엇입니까?")
-    a1 = st.text_input("정답 입력 (예: 1950)")
+    st.write("**질문:**")
+    st.write("- 언제 Nino3.4 해역에서 **8월 수온 평균값**이 가장 높았나요? (예: 2016년)")
+    st.write("- 언제 Nino3.4 해역에서 **수온 평년평균값**이 가장 높았나요? (예: 2004년)")
+
+    # 2) 월 선택
+    sel_month = st.selectbox("월 선택", options=sorted(df_display["Month"].unique()), index=7)  # 기본 8월
+
+    # 3) 연도 범위 슬라이더
+    yr_range = st.slider("연도 범위 선택", min_year, max_year, (1980, 2000))
+
+    # 4) 선택 데이터 필터링
+    filt = df[(df["Year"] >= yr_range[0]) & (df["Year"] <= yr_range[1]) & (df["Month"] == sel_month)]
+
+    # 5) 그래프: 수온 평균 vs 평년평균 (꺾은선)
+    fig = px.line(filt, x="date", y=["nino3.4 수온 평균", "nino3.4 수온 평년평균"],
+                  labels={"value": "온도(°C)", "date": "날짜", "variable": "항목"},
+                  title=f"{sel_month}월 Nino 3.4 수온 변화",
+                  color_discrete_map={
+                      "nino3.4 수온 평균": "red",
+                      "nino3.4 수온 평년평균": "blue"
+                  })
+
+    # Y축 범위 고정
+    fig.update_yaxes(range=[-3, 3])
+    # 줌 기능 활성화 (기본 Plotly 제공)
+    st.plotly_chart(fig, use_container_width=True)
+
+    # 6) 질문 1: 8월 수온 평균값 최고 연도
+    if sel_month == 8:
+        max_temp_year = int(filt.loc[filt["nino3.4 수온 평균"].idxmax(), "Year"]) if not filt.empty else None
+    else:
+        max_temp_year = None
+
+    # 7) 질문 2: 8월 평년평균 최고 연도
+    if sel_month == 8:
+        max_norm_year = int(filt.loc[filt["nino3.4 수온 평년평균"].idxmax(), "Year"]) if not filt.empty else None
+    else:
+        max_norm_year = None
+
+    # 학생 입력
+    ans1 = st.text_input("질문 1: Nino3.4 해역에서 8월 수온 평균값이 가장 높았던 연도는?")
+    ans2 = st.text_input("질문 2: Nino3.4 해역에서 8월 수온 평년평균값이 가장 높았던 연도는?")
+
     if st.button("제출 (미션 1)"):
-        if a1.strip() == str(min_year):
+        if str(ans1).strip() == str(max_temp_year) and str(ans2).strip() == str(max_norm_year):
             st.success("정답입니다! 다음 미션으로 이동합니다.")
             st.session_state.mission = 2
             st.rerun()
         else:
             st.error("틀렸습니다. 다시 시도하세요.")
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -----------------------
 # 미션 2 (평균 + 기준선)
