@@ -153,6 +153,9 @@ else:
 # -----------------------
 # 미션 1
 # -----------------------
+# -----------------------
+# 미션 1
+# -----------------------
 if st.session_state.mission == 1:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("미션 1️⃣ : Nino3.4 해역과 수온 데이터 탐색")
@@ -175,10 +178,8 @@ if st.session_state.mission == 1:
     filtered = filtered[filtered["Month"] == selected_month]
 
     # ✅ y축 범위 자동 계산
-    # (1) 수온 평균
     y_min_avg = filtered["nino3.4 수온 평균"].min() - 1
     y_max_avg = filtered["nino3.4 수온 평균"].max() + 1
-
 
     # ✅ 첫 번째 그래프: 수온 평균
     fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
@@ -188,21 +189,19 @@ if st.session_state.mission == 1:
     fig_avg.update_layout(yaxis=dict(range=[y_min_avg, y_max_avg]))
     st.plotly_chart(fig_avg, use_container_width=True)
 
-
-    # ✅ 질문 추가
+    # ✅ 질문 추가 (1개만)
     st.markdown("#### 질문")
     st.write(f"1️⃣ 언제 Nino3.4 해역에서 **{selected_month}월의 수온 평균값**이 가장 높았나요? (예: 2024년)")
-    q1_answer = st.text_input("정답 입력 (질문 1)", key="mission1_q1")
+    q1_answer = st.text_input("정답 입력", key="mission1_q1")
 
     # ✅ 제출 버튼
     if st.button("제출 (미션 1)"):
-        # 실제 정답 로직 (필요시 자동 확인 가능)
-        if q1_answer.strip() and q2_answer.strip():
+        if q1_answer.strip():
             st.success("정답이 제출되었습니다! 다음 미션으로 이동합니다.")
             st.session_state.mission = 2
             st.rerun()
         else:
-            st.error("두 질문 모두 답을 입력하세요.")
+            st.error("정답을 입력하세요.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
