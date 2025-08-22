@@ -119,72 +119,45 @@ min_year = int(df_display["Year"].min())
 max_year = int(df_display["Year"].max())
 
 # -----------------------
-# 세션 상태
+# 세션 상태 초기화
 # -----------------------
-if "team_name" not in st.session_state:
-    st.session_state.team_name = ""
-if "start_time" not in st.session_state:
-    st.session_state.start_time = None
 if "mission" not in st.session_state:
     st.session_state.mission = 1
-if "finished" not in st.session_state:
-    st.session_state.finished = False
-
-st.markdown(f"**진행 상황:** 미션 {st.session_state.mission}/4")
-
-# -----------------------
-# 팀 이름
-# -----------------------
-if not st.session_state.team_name:
-    st.subheader("팀 이름을 입력하세요")
-    t = st.text_input("팀 이름")
-    if st.button("시작하기"):
-        if t.strip():
-            st.session_state.team_name = t.strip()
-            st.session_state.start_time = time.time()
-            st.rerun()
-    st.stop()
-else:
-    st.caption(f"현재 팀: **{st.session_state.team_name}**")
-
-
-# ✅ Session 초기화
-if "mission" not in st.session_state:
-    st.session_state.mission = 1
-if "codes" not in st.session_state:
-    st.session_state.codes = []
 if "finished" not in st.session_state:
     st.session_state.finished = False
 if "start_time" not in st.session_state:
     st.session_state.start_time = time.time()
 if "end_time" not in st.session_state:
     st.session_state.end_time = None
+if "codes" not in st.session_state:
+    st.session_state.codes = []  # 암호 문자 저장
 
-
-
-# ✅ 완료 화면 (최우선)
+# -----------------------
+# 완료 화면 (항상 최상단)
+# -----------------------
 if st.session_state.finished:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("🎉 미션 완료")
+
     dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
-    m = int(dur_sec // 60); s = int(dur_sec % 60)
+    m = int(dur_sec // 60)
+    s = int(dur_sec % 60)
     st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
 
-    st.write(f"획득한 암호: {'-'.join(st.session_state.codes)}")
+    st.write("획득한 암호 코드:")
+    st.success(" - ".join(st.session_state.codes))
 
     st.write("마지막 단계: 암호를 입력하세요.")
-    code = st.text_input("최종 암호")
+    code = st.text_input("최종 암호 (예: ENSO)")
     if st.button("암호 해독"):
         if code.strip().upper() == "ENSO":
             st.success("🎯 암호해독 성공!")
             st.balloons()
         else:
             st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
+
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-
-# ✅ 그 아래에 미션 조건들
 # -----------------------
 # 미션 1
 # -----------------------
@@ -194,22 +167,22 @@ elif st.session_state.mission == 1:
 
     # ✅ 월 선택
     months = list(range(1, 13))
-    selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=0)  # 기본값 1월
+    selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=7)  # 기본 8월
 
-    # ✅ 연도 범위 슬라이더
+    # ✅ 연도 범위
     min_year = int(df["Year"].min())
     max_year = int(df["Year"].max())
     year_range = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
 
-    # ✅ 데이터 필터링 (선택한 월 + 연도 범위)
+    # ✅ 데이터 필터
     filtered = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
     filtered = filtered[filtered["Month"] == selected_month]
 
-    # ✅ y축 범위 자동 계산
+    # ✅ y축 자동
     y_min_avg = filtered["nino3.4 수온 평균"].min() - 1
     y_max_avg = filtered["nino3.4 수온 평균"].max() + 1
 
-    # ✅ 첫 번째 그래프: 수온 평균
+    # ✅ 그래프
     fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
                       labels={"nino3.4 수온 평균": "수온 평균(°C)", "date": "날짜"},
                       title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
@@ -217,15 +190,15 @@ elif st.session_state.mission == 1:
     fig_avg.update_layout(yaxis=dict(range=[y_min_avg, y_max_avg]))
     st.plotly_chart(fig_avg, use_container_width=True)
 
-    # ✅ 질문 추가 (1개만)
+    # ✅ 질문
     st.markdown("#### 질문")
-    st.write(f"1️⃣ 언제 Nino3.4 해역에서 8월의 수온 평균값이 가장 높았나요? (예: 2024년)")
+    st.write(f"1️⃣ 언제 Nino3.4 해역에서 {selected_month}월의 수온 평균값이 가장 높았나요? (예: 2024년)")
     q1_answer = st.text_input("정답 입력", key="mission1_q1")
 
-    # ✅ 제출 버튼
     if st.button("제출 (미션 1)"):
         if q1_answer.strip():
             st.success("정답이 제출되었습니다! 다음 미션으로 이동합니다.")
+            st.session_state.codes.append("E")  # ✅ 코드 지급
             st.session_state.mission = 2
             st.rerun()
         else:
@@ -234,123 +207,35 @@ elif st.session_state.mission == 1:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------
-# 미션 2 (평균 + 기준선)
+# 미션 2
 # -----------------------
 elif st.session_state.mission == 2:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("미션 2️⃣ : 연도 구간 평균 지수")
-    yr = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
+    st.subheader("미션 2️⃣ : ENSO 지수 탐색")
+
+    # ✅ 연도 범위
+    min_year = int(df_display["Year"].min())
+    max_year = int(df_display["Year"].max())
+    yr = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year), key="mission2_slider")
+
     filt = df_display[(df_display["Year"] >= yr[0]) & (df_display["Year"] <= yr[1])]
-    avg_val = round(filt["지수"].dropna().mean(), 2)
 
-    fig = px.line(filt, x="date", y="지수", title="월별 지수 변화")
-    fig.add_hline(y=0.5, line_dash="dot", line_color="red", annotation_text="엘니뇨(≥0.5)")
-    fig.add_hline(y=-0.5, line_dash="dot", line_color="blue", annotation_text="라니냐(≤-0.5)")
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.info(f"👉 선택한 구간의 평균 지수: **{avg_val:.2f}**")
-
-    st.write("질문: 선택한 구간의 평균 지수는 소수점 둘째 자리까지 얼마입니까?")
-    a2 = st.text_input("정답 입력 (예: 0.15)")
-    if st.button("제출 (미션 2)"):
-        if a2.strip() == f"{avg_val:.2f}":
-            st.success("정답입니다! 다음 미션으로 이동합니다.")
-            st.session_state.mission = 3
-            st.rerun()
-        else:
-            st.error("틀렸습니다. 다시 시도하세요.")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# -----------------------
-# 미션 3
-# -----------------------
-elif st.session_state.mission == 3:
-    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("미션 3️⃣ : 월별 최대 지수의 연도 찾기")
-
-    sel_month = st.selectbox("월 선택", options=sorted(df_display["Month"].unique()))
-    md = df_display[df_display["Month"] == sel_month].dropna(subset=["지수"])
-
-    if len(md) > 0:
-        # 그래프 추가: 선택한 월의 연도별 지수 변화
-        fig3 = px.line(md, x="Year", y="지수", markers=True,
-                       title=f"{sel_month}월의 연도별 지수 변화")
-        st.plotly_chart(fig3, use_container_width=True)
-
-        # 데이터 테이블 제공
-        st.dataframe(md[["Year", "지수"]])
-
-        # 정답 계산
-        max_idx = md["지수"].idxmax()
-        max_year_for_month = int(df_display.loc[max_idx, "Year"])
-
-        st.write(f"질문: {sel_month}월에서 가장 높은 지수를 기록한 연도는?")
-        a3 = st.text_input("정답 입력 (예: 1997)")
-        if st.button("제출 (미션 3)"):
-            if a3.strip() == str(max_year_for_month):
-                st.success("정답입니다! 다음 미션으로 이동합니다.")
-                st.session_state.mission = 4
-                st.rerun()
-            else:
-                st.error("틀렸습니다. 다시 시도하세요.")
-    else:
-        st.warning("해당 월에 데이터가 없습니다.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-# -----------------------
-# 미션 4 (새로운 분석형)
-# -----------------------
-if st.session_state.mission == 4:
-    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("미션 4️⃣ : 가장 강한 라니냐가 있었던 연도는?")
-
-    # ✅ 연도 범위 선택 슬라이더
-    min_year = int(df["Year"].min())
-    max_year = int(df["Year"].max())
-    yr_range = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
-
-    # ✅ 선택된 범위 데이터 필터링
-    filt = df[(df["Year"] >= yr_range[0]) & (df["Year"] <= yr_range[1])]
     if len(filt) > 0:
-        # ✅ 연도별 최소 ONI index (라니냐는 음수가 크니까 min값)
-        yearly_min = filt.groupby("Year")["ONI index"].min().reset_index()
+        fig2 = px.line(filt, x="date", y="지수", title="ENSO 지수 변화", markers=True)
+        fig2.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="엘니뇨 기준 (+0.5)")
+        fig2.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준 (-0.5)")
+        fig2.update_yaxes(range=[-3, 3])
+        st.plotly_chart(fig2, use_container_width=True)
 
-        # ✅ 꺾은선 그래프 생성
-        fig4 = px.line(yearly_min, x="Year", y="ONI index",
-                       title="연도별 최소 ONI 지수 (가장 강한 라니냐 후보)",
-                       markers=True,
-                       labels={"ONI index": "ONI 지수", "Year": "연도"})
+        st.write("질문: 이 기간 동안 지수가 가장 높은 해는?")
+        a2 = st.text_input("정답 입력 (예: 1997)", key="mission2_q1")
 
-        # ✅ 엘니뇨 / 라니냐 기준선 추가
-        fig4.add_hline(y=0.5, line_dash="dash", line_color="red",
-                       annotation_text="엘니뇨 기준 (+0.5)", annotation_position="bottom right")
-        fig4.add_hline(y=-0.5, line_dash="dash", line_color="blue",
-                       annotation_text="라니냐 기준 (-0.5)", annotation_position="top right")
-
-        # ✅ Y축 범위 (-3 ~ 3)
-        fig4.update_yaxes(range=[-3, 3])
-
-        # ✅ 그래프 표시
-        st.plotly_chart(fig4, use_container_width=True)
-
-        # ✅ 데이터 테이블
-        st.dataframe(yearly_min)
-
-        # ✅ 정답 계산: 선택 구간에서 가장 작은 ONI 지수의 연도
-        strongest_year = int(yearly_min.loc[yearly_min["ONI index"].idxmin(), "Year"])
-
-        # ✅ 질문 & 입력 (key를 고유하게 변경)
-        st.write("질문: 이 기간 동안 가장 강한 라니냐(ONI 지수가 가장 낮은) 연도는?")
-        a4 = st.text_input("정답 입력 (예: 1988)", key="mission4_answer")
-
-        if st.button("제출 (미션 4)", key="submit_mission4"):
-            if a4.strip() == str(strongest_year):
-                st.success("정답입니다! 모든 미션을 완료했습니다.")
-                st.balloons()
-                st.session_state.finished = True
-                st.session_state.end_time = time.time()
+        if st.button("제출 (미션 2)"):
+            strongest_year = int(filt.loc[filt["지수"].idxmax(), "Year"])
+            if a2.strip() == str(strongest_year):
+                st.success("정답입니다! 다음 미션으로 이동합니다.")
+                st.session_state.codes.append("N")  # ✅ 코드 지급
+                st.session_state.mission = 3
                 st.rerun()
             else:
                 st.error("틀렸습니다. 다시 시도하세요.")
@@ -359,29 +244,76 @@ if st.session_state.mission == 4:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-
 # -----------------------
-# 완료 화면
+# 미션 3
 # -----------------------
-elif st.session_state.finished:
+elif st.session_state.mission == 3:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("🎉 미션 완료")
+    st.subheader("미션 3️⃣ : 라니냐 탐색")
 
-    # ✅ 총 소요 시간 계산
-    dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
-    m = int(dur_sec // 60)
-    s = int(dur_sec % 60)
-    st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
+    yr = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year), key="mission3_slider")
+    filt = df_display[(df_display["Year"] >= yr[0]) & (df_display["Year"] <= yr[1])]
 
-    st.write("마지막 단계: 암호를 입력하세요.")
-    code = st.text_input("최종 암호", key="final_code")
+    if len(filt) > 0:
+        fig3 = px.line(filt, x="date", y="지수", title="ENSO 지수 변화 (라니냐 탐색)", markers=True)
+        fig3.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="엘니뇨 기준 (+0.5)")
+        fig3.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준 (-0.5)")
+        fig3.update_yaxes(range=[-3, 3])
+        st.plotly_chart(fig3, use_container_width=True)
 
-    if st.button("암호 해독", key="decode_btn"):
-        if code.strip().upper() == "ENSO":
-            st.success("🎯 암호 해독 성공! 미션 완전 완료!")
-            st.balloons()
-        else:
-            st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
+        st.write("질문: 이 기간 동안 가장 강한 라니냐는 몇 년?")
+        a3 = st.text_input("정답 입력 (예: 2010)", key="mission3_q1")
+
+        if st.button("제출 (미션 3)"):
+            weakest_year = int(filt.loc[filt["지수"].idxmin(), "Year"])
+            if a3.strip() == str(weakest_year):
+                st.success("정답입니다! 다음 미션으로 이동합니다.")
+                st.session_state.codes.append("S")  # ✅ 코드 지급
+                st.session_state.mission = 4
+                st.rerun()
+            else:
+                st.error("틀렸습니다. 다시 시도하세요.")
+    else:
+        st.warning("선택한 기간에 데이터가 없습니다.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# -----------------------
+# 미션 4
+# -----------------------
+elif st.session_state.mission == 4:
+    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
+    st.subheader("미션 4️⃣ : 가장 강한 라니냐가 있었던 연도는?")
+
+    yr = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year), key="mission4_slider")
+    filt = df_display[(df_display["Year"] >= yr[0]) & (df_display["Year"] <= yr[1])]
+
+    if len(filt) > 0:
+        yearly_min = filt.groupby("Year")["지수"].min().reset_index()
+
+        fig4 = px.line(yearly_min, x="Year", y="지수", title="연도별 최소 지수 (가장 강한 라니냐 후보)", markers=True)
+        fig4.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="엘니뇨 기준 (+0.5)")
+        fig4.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준 (-0.5)")
+        fig4.update_yaxes(range=[-3, 3])
+        st.plotly_chart(fig4, use_container_width=True)
+
+        st.dataframe(yearly_min)
+
+        strongest_year = int(yearly_min.loc[yearly_min["지수"].idxmin(), "Year"])
+
+        st.write("질문: 이 기간 동안 가장 강한 라니냐(지수가 가장 낮은) 연도는?")
+        a4 = st.text_input("정답 입력", key="mission4_q1")
+
+        if st.button("제출 (미션 4)"):
+            if a4.strip() == str(strongest_year):
+                st.success("정답입니다! 모든 미션을 완료했습니다.")
+                st.session_state.codes.append("O")  # ✅ 마지막 코드 지급
+                st.session_state.finished = True
+                st.session_state.end_time = time.time()
+                st.rerun()
+            else:
+                st.error("틀렸습니다. 다시 시도하세요.")
+    else:
+        st.warning("선택한 기간에 데이터가 없습니다.")
 
     st.markdown("</div>", unsafe_allow_html=True)
