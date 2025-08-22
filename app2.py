@@ -126,7 +126,6 @@ if st.session_state.mission == 0:
 # 미션 1
 # -----------------------
 elif st.session_state.mission == 1:
-    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("미션 1️⃣ : Nino3.4 해역과 수온 데이터 탐색")
     months = list(range(1, 13))
     selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=7)
@@ -136,21 +135,21 @@ elif st.session_state.mission == 1:
     fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
                       labels={"nino3.4 수온 평균": "수온 평균(°C)", "date": "날짜"},
                       title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
-    fig_avg.update_traces(mode="lines+markers")
     st.plotly_chart(fig_avg, use_container_width=True)
 
     q1_answer = st.text_input("질문: 언제 가장 높았나요? (예: 2024년)")
-    if st.button("제출 (미션 1)"):
+    if st.button("제출 (미션 1)", key="submit_m1"):
         if q1_answer.strip():
-            st.success("정답 제출 완료!")
+            st.session_state.q1_correct = True
             st.info("암호 코드: **E**")
-            if st.button("다음 미션으로 이동"):
-                st.session_state.codes.append("E")
-                st.session_state.mission = 2
-                st.rerun()
         else:
             st.error("정답을 입력하세요.")
-    st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.session_state.get("q1_correct"):
+        if st.button("다음 미션으로 이동", key="next_m1"):
+            st.session_state.codes.append("E")
+            st.session_state.mission = 2
+            st.rerun()
 
 # -----------------------
 # 미션 2
@@ -163,19 +162,22 @@ elif st.session_state.mission == 2:
     fig2.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="엘니뇨 기준")
     fig2.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준")
     st.plotly_chart(fig2, use_container_width=True)
+
     a2 = st.text_input("질문: 지수가 가장 높은 해는?")
-    if st.button("제출 (미션 2)"):
+    if st.button("제출 (미션 2)", key="submit_m2"):
         strongest_year = int(filt.loc[filt["지수"].idxmax(), "Year"])
         if a2.strip() == str(strongest_year):
-            st.success("정답입니다!")
+            st.session_state.q2_correct = True
             st.info("암호 코드: **N**")
-            if st.button("다음 미션으로 이동"):
-                st.session_state.codes.append("N")
-                st.session_state.mission = 3
-                st.rerun()
         else:
             st.error("틀렸습니다.")
-            
+
+    if st.session_state.get("q2_correct"):
+        if st.button("다음 미션으로 이동", key="next_m2"):
+            st.session_state.codes.append("N")
+            st.session_state.mission = 3
+            st.rerun()
+
 # -----------------------
 # 미션 3
 # -----------------------
@@ -187,19 +189,22 @@ elif st.session_state.mission == 3:
     fig3.add_hline(y=0.5, line_dash="dash", line_color="red")
     fig3.add_hline(y=-0.5, line_dash="dash", line_color="blue")
     st.plotly_chart(fig3, use_container_width=True)
+
     a3 = st.text_input("질문: 가장 강한 라니냐는 몇 년?")
-    if st.button("제출 (미션 3)"):
+    if st.button("제출 (미션 3)", key="submit_m3"):
         weakest_year = int(filt.loc[filt["지수"].idxmin(), "Year"])
         if a3.strip() == str(weakest_year):
-            st.success("정답입니다!")
+            st.session_state.q3_correct = True
             st.info("암호 코드: **S**")
-            if st.button("다음 미션으로 이동"):
-                st.session_state.codes.append("S")
-                st.session_state.mission = 4
-                st.rerun()
         else:
             st.error("틀렸습니다.")
-            
+
+    if st.session_state.get("q3_correct"):
+        if st.button("다음 미션으로 이동", key="next_m3"):
+            st.session_state.codes.append("S")
+            st.session_state.mission = 4
+            st.rerun()
+
 # -----------------------
 # 미션 4
 # -----------------------
@@ -210,26 +215,28 @@ elif st.session_state.mission == 4:
     yearly_min = filt.groupby("Year")["지수"].min().reset_index()
     fig4 = px.line(yearly_min, x="Year", y="지수", title="연도별 최소 지수", markers=True)
     st.plotly_chart(fig4, use_container_width=True)
+
     a4 = st.text_input("질문: 가장 강한 라니냐 연도는?")
-    if st.button("제출 (미션 4)"):
+    if st.button("제출 (미션 4)", key="submit_m4"):
         strongest_year = int(yearly_min.loc[yearly_min["지수"].idxmin(), "Year"])
         if a4.strip() == str(strongest_year):
-            st.success("모든 미션 완료!")
+            st.session_state.q4_correct = True
             st.info("암호 코드: **O**")
-            if st.button("완료 화면으로 이동"):
-                st.session_state.codes.append("O")
-                st.session_state.mission = 5
-                st.session_state.end_time = time.time()
-                st.rerun()
         else:
             st.error("틀렸습니다.")
-            
+
+    if st.session_state.get("q4_correct"):
+        if st.button("미션 완료", key="finish_btn"):
+            st.session_state.codes.append("O")
+            st.session_state.mission = 5
+            st.session_state.end_time = time.time()
+            st.rerun()
+
 # -----------------------
 # 완료 화면
 # -----------------------
 elif st.session_state.mission == 5:
     st.subheader("🎉 미션 완료")
-    
     dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
     m = int(dur_sec // 60)
     s = int(dur_sec % 60)
@@ -237,11 +244,10 @@ elif st.session_state.mission == 5:
 
     st.write("모은 암호 조각을 조합해 암호를 입력하세요.")
     code = st.text_input("최종 암호 입력")
-    
     if st.button("암호 해독"):
         if code.strip().upper() == "ENSO":
             st.success("🎯 암호 해독 성공! 사건의 진실이 밝혀졌습니다!")
             st.balloons()
-            st.write("🌍 지구의 기후 비밀을 풀어낸 당신, 훌륭합니다! 다음 사건도 기대하세요...")
+            st.write("🌍 **축하합니다! 당신은 기후의 비밀을 밝혀낸 최고의 수사관입니다.**")
         else:
             st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
