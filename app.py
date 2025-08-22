@@ -214,15 +214,31 @@ elif st.session_state.mission == 3:
 # -----------------------
 elif st.session_state.mission == 4:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("미션 4️⃣ : 특정 연도의 최대 지수 달 찾기")
-    sel_year = st.slider("연도 선택", min_year, max_year, min_year)
-    yd = df_display[df_display["Year"] == sel_year]
-    if len(yd) > 0:
-        max_idx = yd["지수"].idxmax()
-        correct_month = int(df_display.loc[max_idx, "Month"])
-        a4 = st.text_input(f"{sel_year}년에서 가장 지수가 높았던 달은? (숫자만 입력)")
+    st.subheader("미션 4️⃣ : 가장 강한 엘니뇨가 있었던 연도는?")
+
+    # 연도 범위 선택 슬라이더
+    yr = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
+
+    # 선택된 범위의 데이터 필터링
+    filt = df_display[(df_display["Year"] >= yr[0]) & (df_display["Year"] <= yr[1])]
+    if len(filt) > 0:
+        # 연도별 최대 지수 계산
+        yearly_max = filt.groupby("Year")["지수"].max().reset_index()
+
+        # 그래프 (연도별 최대 지수)
+        fig4 = px.bar(yearly_max, x="Year", y="지수", title="연도별 최대 지수 (가장 강한 엘니뇨 후보)")
+        st.plotly_chart(fig4, use_container_width=True)
+
+        # 데이터 테이블
+        st.dataframe(yearly_max)
+
+        # 정답 계산: 전체 중 가장 큰 지수의 연도
+        strongest_year = int(yearly_max.loc[yearly_max["지수"].idxmax(), "Year"])
+
+        st.write("질문: 이 기간 동안 가장 강한 엘니뇨(지수가 가장 높은) 연도는?")
+        a4 = st.text_input("정답 입력 (예: 1997)")
         if st.button("제출 (미션 4)"):
-            if a4.strip() == str(correct_month):
+            if a4.strip() == str(strongest_year):
                 st.success("정답입니다! 모든 미션을 완료했습니다.")
                 st.balloons()
                 st.session_state.finished = True
@@ -231,8 +247,10 @@ elif st.session_state.mission == 4:
             else:
                 st.error("틀렸습니다. 다시 시도하세요.")
     else:
-        st.warning("해당 연도에 데이터가 없습니다.")
+        st.warning("선택한 기간에 데이터가 없습니다.")
+
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -----------------------
 # 완료 화면
