@@ -220,17 +220,22 @@ elif st.session_state.mission == 4:
             st.error("틀렸습니다.")
             
 # -----------------------
-# 완료 페이지
+# 완료 화면
 # -----------------------
-elif st.session_state.mission == 5:
-    st.subheader("🎉 미션 완료!")
-    dur = int(st.session_state.end_time - st.session_state.start_time)
-    st.write(f"총 소요 시간: {dur//60}분 {dur%60}초")
-    st.write(f"획득한 암호 조각: {' - '.join(st.session_state.codes)}")
-    code = st.text_input("최종 암호를 입력하세요")
+elif st.session_state.finished:
+    st.subheader("🎉 미션 완료")
+    
+    dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
+    m = int(dur_sec // 60)
+    s = int(dur_sec % 60)
+    st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
+
+    st.write("모은 암호 조각을 조합해 암호를 입력하세요.")
+    code = st.text_input("최종 암호 입력")
+    
     if st.button("암호 해독"):
         if code.strip().upper() == "ENSO":
-            st.success("🎯 암호 해독 성공!")
+            st.success("🎯 암호 해독 성공! 사건의 진실이 밝혀졌습니다!")
             st.balloons()
         else:
-            st.error("❌ 틀렸습니다.")
+            st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
