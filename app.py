@@ -225,14 +225,20 @@ elif st.session_state.mission == 4:
         # 연도별 최대 지수 계산
         yearly_max = filt.groupby("Year")["지수"].max().reset_index()
 
-        # 그래프 (연도별 최대 지수)
-        fig4 = px.bar(yearly_max, x="Year", y="지수", title="연도별 최대 지수 (가장 강한 엘니뇨 후보)")
+        # 꺾은선 그래프 생성
+        fig4 = px.line(yearly_max, x="Year", y="지수", title="연도별 최대 지수 (가장 강한 엘니뇨 후보)", markers=True)
+
+        # 엘니뇨 / 라니냐 기준선 추가
+        fig4.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="엘니뇨 기준 (+0.5)", annotation_position="bottom right")
+        fig4.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준 (-0.5)", annotation_position="top right")
+
+        # 그래프 표시
         st.plotly_chart(fig4, use_container_width=True)
 
         # 데이터 테이블
         st.dataframe(yearly_max)
 
-        # 정답 계산: 전체 중 가장 큰 지수의 연도
+        # 정답 계산: 선택 구간에서 가장 큰 지수의 연도
         strongest_year = int(yearly_max.loc[yearly_max["지수"].idxmax(), "Year"])
 
         st.write("질문: 이 기간 동안 가장 강한 엘니뇨(지수가 가장 높은) 연도는?")
@@ -250,6 +256,7 @@ elif st.session_state.mission == 4:
         st.warning("선택한 기간에 데이터가 없습니다.")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 # -----------------------
