@@ -133,7 +133,7 @@ if "codes" not in st.session_state:
     st.session_state.codes = []  # 암호 문자 저장
 
 # -----------------------
-# 완료 화면 (항상 최상단)
+# 완료 화면
 # -----------------------
 if st.session_state.finished:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
@@ -143,9 +143,6 @@ if st.session_state.finished:
     m = int(dur_sec // 60)
     s = int(dur_sec % 60)
     st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
-
-    st.write("획득한 암호 코드:")
-    st.success(" - ".join(st.session_state.codes))
 
     st.write("마지막 단계: 암호를 입력하세요.")
     code = st.text_input("최종 암호 (예: ENSO)")
@@ -157,6 +154,7 @@ if st.session_state.finished:
             st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -----------------------
 # 미션 1
