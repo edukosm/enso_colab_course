@@ -154,10 +154,6 @@ if st.session_state.mission == 1:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("미션 1️⃣ : Nino3.4 해역과 수온 데이터 탐색")
 
-    # ✅ Nino3.4 해역 이미지
-    st.image("https://www.climate.gov/sites/default/files/styles/full_width_620_original_image/public/2021-07/Nino34Region.png",
-         caption="Nino3.4 해역 위치", use_container_width=True)
-
     # ✅ 월 선택
     months = list(range(1, 13))
     selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=7)  # 기본값 8월
