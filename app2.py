@@ -81,6 +81,7 @@ if index_col is None:
 df_display = df[["날짜", index_col, "date", "Year", "Month"]].rename(columns={index_col: "지수"})
 min_year = int(df_display["Year"].min())
 max_year = int(df_display["Year"].max())
+
 # -----------------------
 # 스타일
 # -----------------------
@@ -132,11 +133,15 @@ elif st.session_state.mission == 1:
     year_range = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
     filtered = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
     filtered = filtered[filtered["Month"] == selected_month]
-    fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
-                      labels={"nino3.4 수온 평균": "수온 평균(°C)", "date": "날짜"},
-                      title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
-    fig_avg.update_traces(mode="lines+markers")
-    st.plotly_chart(fig_avg, use_container_width=True)
+
+    if "nino3.4 수온 평균" in df.columns:
+        fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
+                          labels={"nino3.4 수온 평균": "수온 평균(°C)", "date": "날짜"},
+                          title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
+        fig_avg.update_traces(mode="lines+markers")
+        st.plotly_chart(fig_avg, use_container_width=True)
+    else:
+        st.warning("⚠️ 데이터에 'nino3.4 수온 평균' 컬럼이 없습니다. 그래프를 건너뜁니다.")
 
     q1_answer = st.text_input("질문: 언제 가장 높았나요? (예: 2024년)")
     if st.button("제출 (미션 1)"):
@@ -208,6 +213,7 @@ elif st.session_state.mission == 4:
     st.plotly_chart(fig4, use_container_width=True)
     a4 = st.text_input("질문: 가장 강한 라니냐 연도는?")
     if st.button("제출 (미션 4)"):
+
         strongest_year = int(yearly_min.loc[yearly_min["지수"].idxmin(), "Year"])
         if a4.strip() == str(strongest_year):
             st.success("모든 미션 완료!")
@@ -222,20 +228,33 @@ elif st.session_state.mission == 4:
 # -----------------------
 # 완료 화면
 # -----------------------
-elif st.session_state.finished:
+elif st.session_state.mission == 5:
     st.subheader("🎉 미션 완료")
-    
+
     dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
     m = int(dur_sec // 60)
     s = int(dur_sec % 60)
     st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
 
-    st.write("모은 암호 조각을 조합해 암호를 입력하세요.")
+    st.markdown("""
+    모든 미션을 완수했습니다!  
+    이제 마지막 관문, **암호를 해독**하세요.  
+    """)
+
     code = st.text_input("최종 암호 입력")
-    
+
     if st.button("암호 해독"):
         if code.strip().upper() == "ENSO":
-            st.success("🎯 암호 해독 성공! 사건의 진실이 밝혀졌습니다!")
+            st.success("🎯 암호 해독 성공!")
             st.balloons()
+            st.markdown("""
+            ### 🏆 사건 해결!
+            당신은 **기후 수사국의 특급 요원**으로 공식 임명되었습니다.  
+            엘니뇨와 라니냐의 비밀을 밝혀낸 덕분에,  
+            세계는 기후 재난을 막을 준비를 할 수 있게 되었습니다.  
+
+            🌍 **당신의 활약으로 지구가 구해졌습니다.**  
+            앞으로도 기후의 흔적을 추적하는 임무는 계속됩니다...
+            """)
         else:
             st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
