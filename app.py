@@ -150,7 +150,10 @@ else:
 # -----------------------
 # 미션 1
 # -----------------------
- if st.session_state.mission == 1:
+# -----------------------
+# 미션 1
+# -----------------------
+if st.session_state.mission == 1:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("미션 1️⃣ : Nino3.4 해역과 수온 데이터 탐색")
 
@@ -219,8 +222,6 @@ else:
             st.error("두 질문 모두 답을 입력하세요.")
 
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 # -----------------------
 # 미션 2 (평균 + 기준선)
