@@ -168,12 +168,16 @@ if st.session_state.mission == 1:
     yr_range = st.slider("연도 범위", min_year, max_year, (min_year, max_year))
     filtered = filtered[(filtered["Year"] >= yr_range[0]) & (filtered["Year"] <= yr_range[1])]
 
+    # ✅ y축 범위 자동 계산
+    y_min = min(filtered["nino3.4 수온 평균"].min(), filtered["nino3.4 수온 평년평균"].min()) - 1
+    y_max = max(filtered["nino3.4 수온 평균"].max(), filtered["nino3.4 수온 평년평균"].max()) + 1
+
     # ✅ Plotly Line Chart
     fig = px.line(filtered, x="date", y=["nino3.4 수온 평균", "nino3.4 수온 평년평균"], 
                   labels={"value": "수온(°C)", "date": "날짜"}, 
                   title=f"{selected_month}월 Nino3.4 해역 수온 변화")
     fig.update_traces(mode="lines+markers")
-    fig.update_layout(yaxis=dict(range=[-3, 3]))  # ✅ y축 고정 (-3 ~ 3)
+    fig.update_layout(yaxis=dict(range=[y_min, y_max]))
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -193,8 +197,6 @@ if st.session_state.mission == 1:
             st.error("틀렸습니다. 다시 시도하세요.")
 
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 # -----------------------
 # 미션 2 (평균 + 기준선)
