@@ -45,7 +45,6 @@ if df is None:
 # 전처리
 # -----------------------
 df.columns = df.columns.map(lambda c: str(c).replace("\ufeff", "").strip())
-
 if "날짜" in df.columns:
     df["날짜"] = df["날짜"].astype(str).str.replace("\ufeff", "", regex=False).str.strip()
 else:
@@ -130,20 +129,27 @@ elif st.session_state.mission == 1:
     months = list(range(1, 13))
     selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=7)
     year_range = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
+    
     filtered = df[(df["Year"] >= year_range[0]) & (df["Year"] <= year_range[1])]
     filtered = filtered[filtered["Month"] == selected_month]
-    fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
-                      labels={"nino3.4 수온 평균": "수온 평균(°C)", "date": "날짜"},
-                      title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
-    st.plotly_chart(fig_avg, use_container_width=True)
 
+    if "nino3.4 수온 평균" in filtered.columns:
+        fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
+                          labels={"nino3.4 수온 평균": "수온 평균(°C)", "date": "날짜"},
+                          title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
+        st.plotly_chart(fig_avg, use_container_width=True)
+    else:
+        st.error("컬럼 'nino3.4 수온 평균'이 없습니다.")
+        st.stop()
+
+    correct_answer = str(filtered.loc[filtered["nino3.4 수온 평균"].idxmax(), "Year"]) if not filtered.empty else None
     q1_answer = st.text_input("질문: 언제 가장 높았나요? (예: 2024년)")
     if st.button("제출 (미션 1)", key="submit_m1"):
-        if q1_answer.strip():
+        if q1_answer.strip() and q1_answer.strip() == correct_answer:
             st.session_state.q1_correct = True
             st.info("암호 코드: **E**")
         else:
-            st.error("정답을 입력하세요.")
+            st.error("틀렸습니다. 다시 시도하세요.")
 
     if st.session_state.get("q1_correct"):
         if st.button("다음 미션으로 이동", key="next_m1"):
@@ -163,14 +169,14 @@ elif st.session_state.mission == 2:
     fig2.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준")
     st.plotly_chart(fig2, use_container_width=True)
 
+    correct_answer = str(filt.loc[filt["지수"].idxmax(), "Year"]) if not filt.empty else None
     a2 = st.text_input("질문: 지수가 가장 높은 해는?")
     if st.button("제출 (미션 2)", key="submit_m2"):
-        strongest_year = int(filt.loc[filt["지수"].idxmax(), "Year"])
-        if a2.strip() == str(strongest_year):
+        if a2.strip() and a2.strip() == correct_answer:
             st.session_state.q2_correct = True
             st.info("암호 코드: **N**")
         else:
-            st.error("틀렸습니다.")
+            st.error("틀렸습니다. 다시 시도하세요.")
 
     if st.session_state.get("q2_correct"):
         if st.button("다음 미션으로 이동", key="next_m2"):
@@ -190,14 +196,14 @@ elif st.session_state.mission == 3:
     fig3.add_hline(y=-0.5, line_dash="dash", line_color="blue")
     st.plotly_chart(fig3, use_container_width=True)
 
+    correct_answer = str(filt.loc[filt["지수"].idxmin(), "Year"]) if not filt.empty else None
     a3 = st.text_input("질문: 가장 강한 라니냐는 몇 년?")
     if st.button("제출 (미션 3)", key="submit_m3"):
-        weakest_year = int(filt.loc[filt["지수"].idxmin(), "Year"])
-        if a3.strip() == str(weakest_year):
+        if a3.strip() and a3.strip() == correct_answer:
             st.session_state.q3_correct = True
             st.info("암호 코드: **S**")
         else:
-            st.error("틀렸습니다.")
+            st.error("틀렸습니다. 다시 시도하세요.")
 
     if st.session_state.get("q3_correct"):
         if st.button("다음 미션으로 이동", key="next_m3"):
@@ -216,14 +222,14 @@ elif st.session_state.mission == 4:
     fig4 = px.line(yearly_min, x="Year", y="지수", title="연도별 최소 지수", markers=True)
     st.plotly_chart(fig4, use_container_width=True)
 
+    correct_answer = str(yearly_min.loc[yearly_min["지수"].idxmin(), "Year"]) if not yearly_min.empty else None
     a4 = st.text_input("질문: 가장 강한 라니냐 연도는?")
     if st.button("제출 (미션 4)", key="submit_m4"):
-        strongest_year = int(yearly_min.loc[yearly_min["지수"].idxmin(), "Year"])
-        if a4.strip() == str(strongest_year):
+        if a4.strip() and a4.strip() == correct_answer:
             st.session_state.q4_correct = True
             st.info("암호 코드: **O**")
         else:
-            st.error("틀렸습니다.")
+            st.error("틀렸습니다. 다시 시도하세요.")
 
     if st.session_state.get("q4_correct"):
         if st.button("미션 완료", key="finish_btn"):
