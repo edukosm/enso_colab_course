@@ -156,7 +156,7 @@ if st.session_state.mission == 1:
 
     # ✅ 월 선택
     months = list(range(1, 13))
-    selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=7)  # 기본값 8월
+    selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=0)  # 기본값 8월
 
     # ✅ 연도 범위 슬라이더
     min_year = int(df["Year"].min())
