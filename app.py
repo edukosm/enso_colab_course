@@ -157,8 +157,11 @@ if st.session_state.mission == 1:
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Nino-regions.png/800px-Nino-regions.png", 
              caption="Nino 3.4 해역 위치")
 
-    st.write("**질문 1:** 언제 Nino3.4 해역에서 8월달에 **수온 평균값**이 가장 높았나요?")
-    st.write("**질문 2:** 언제 Nino3.4 해역에서 **수온 평년평균값**이 가장 높았나요?")
+    st.write("**질문 1:** 언제 Nino3.4 해역에서 **8월의 수온 평균값**이 가장 높았나요?")
+    ans1 = st.text_input("질문 1 답: (예: 2015년)")
+
+    st.write("**질문 2:** 언제 Nino3.4 해역에서 **8월의 수온 평년평균값**이 가장 높았나요?")
+    ans2 = st.text_input("질문 2 답: (예: 1997년)")
 
     # ✅ 월 선택
     selected_month = st.selectbox("월 선택", list(range(1, 13)), index=7)  # 기본값: 8월
@@ -169,25 +172,36 @@ if st.session_state.mission == 1:
     filtered = filtered[(filtered["Year"] >= yr_range[0]) & (filtered["Year"] <= yr_range[1])]
 
     # ✅ y축 범위 자동 계산
-    y_min = min(filtered["nino3.4 수온 평균"].min(), filtered["nino3.4 수온 평년평균"].min()) - 1
-    y_max = max(filtered["nino3.4 수온 평균"].max(), filtered["nino3.4 수온 평년평균"].max()) + 1
+    y_min_avg = filtered["nino3.4 수온 평균"].min() - 1
+    y_max_avg = filtered["nino3.4 수온 평균"].max() + 1
 
-    # ✅ Plotly Line Chart
-    fig = px.line(filtered, x="date", y=["nino3.4 수온 평균", "nino3.4 수온 평년평균"], 
-                  labels={"value": "수온(°C)", "date": "날짜"}, 
-                  title=f"{selected_month}월 Nino3.4 해역 수온 변화")
-    fig.update_traces(mode="lines+markers")
-    fig.update_layout(yaxis=dict(range=[y_min, y_max]))
+    y_min_clim = filtered["nino3.4 수온 평년평균"].min() - 1
+    y_max_clim = filtered["nino3.4 수온 평년평균"].max() + 1
 
-    st.plotly_chart(fig, use_container_width=True)
+    # ✅ 첫 번째 그래프: 수온 평균
+    fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
+                      labels={"nino3.4 수온 평균": "수온 평균(°C)", "date": "날짜"},
+                      title=f"{selected_month}월 Nino3.4 해역 수온 평균 변화")
+    fig_avg.update_traces(mode="lines+markers")
+    fig_avg.update_layout(yaxis=dict(range=[y_min_avg, y_max_avg]))
 
-    # ✅ 학생 입력
-    ans1 = st.text_input("질문 1 답: (예: 2015년)")
-    ans2 = st.text_input("질문 2 답: (예: 1997년)")
+    st.plotly_chart(fig_avg, use_container_width=True)
 
+    # ✅ 두 번째 그래프: 수온 평년평균
+    fig_clim = px.line(filtered, x="date", y="nino3.4 수온 평년평균",
+                       labels={"nino3.4 수온 평년평균": "수온 평년평균(°C)", "date": "날짜"},
+                       title=f"{selected_month}월 Nino3.4 해역 수온 평년평균 변화")
+    fig_clim.update_traces(mode="lines+markers")
+    fig_clim.update_layout(yaxis=dict(range=[y_min_clim, y_max_clim]))
+
+    st.plotly_chart(fig_clim, use_container_width=True)
+
+    # ✅ 정답 확인 로직
     if st.button("제출 (미션 1)"):
-        correct1 = str(filtered.loc[filtered["nino3.4 수온 평균"].idxmax(), "Year"])
-        correct2 = str(filtered.loc[filtered["nino3.4 수온 평년평균"].idxmax(), "Year"])
+        # 전체 데이터에서 8월 데이터 기준으로 가장 높은 연도 계산
+        august_data = df[df["Month"] == 8]
+        correct1 = str(august_data.loc[august_data["nino3.4 수온 평균"].idxmax(), "Year"])
+        correct2 = str(august_data.loc[august_data["nino3.4 수온 평년평균"].idxmax(), "Year"])
 
         if ans1.strip() == correct1 and ans2.strip() == correct2:
             st.success("정답입니다! 다음 미션으로 이동합니다.")
@@ -197,6 +211,7 @@ if st.session_state.mission == 1:
             st.error("틀렸습니다. 다시 시도하세요.")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # -----------------------
 # 미션 2 (평균 + 기준선)
