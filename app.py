@@ -1,179 +1,179 @@
 import streamlit as st
 import pandas as pd
-import time
 import plotly.express as px
+import time
+from datetime import datetime
 
-# -------------------
-# 앱 기본 설정
-# -------------------
-st.set_page_config(page_title="기후 미션 챌린지", layout="wide")
+# --- 페이지 설정 ---
+st.set_page_config(page_title="기후 데이터 미션 챌린지", layout="wide")
 
-# 배경 이미지 CSS (저작권 문제 없는 Unsplash 이미지)
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
-        background-size: cover;
-    }
-    .mission-card {
-        background-color: rgba(255, 255, 255, 0.8);
-        padding: 20px;
-        border-radius: 15px;
-        margin-bottom: 20px;
-    }
-    .stButton > button {
-        background-color: black;
-        color: white;
-        font-size: 18px;
-        padding: 10px 20px;
-        border-radius: 8px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# --- CSS (배경 & 카드 스타일 & 버튼) ---
+page_bg_img = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e");
+    background-size: cover;
+    background-position: center;
+}
+.block-container {
+    color: black;
+}
+.mission-card {
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+.stButton > button {
+    background-color: black;
+    color: white;
+    font-weight: bold;
+}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
 
-# -------------------
-# 데이터 로드
-# -------------------
+# --- 데이터 로드 ---
 @st.cache_data
 def load_data():
-    df = pd.read_csv("oni_month_20250821.csv")
-    # 날짜 파싱
+    df = pd.read_csv("ocean_data.csv", encoding="utf-8-sig")
     df['date'] = pd.to_datetime(df['날짜'], format='%Y년 %m월')
+    df['Year'] = df['date'].dt.year
+    df['Month'] = df['date'].dt.month
     return df
 
 df = load_data()
 
-# -------------------
-# 세션 상태 초기화
-# -------------------
+# --- 세션 상태 초기화 ---
 if "team_name" not in st.session_state:
     st.session_state.team_name = ""
-if "mission" not in st.session_state:
-    st.session_state.mission = 1
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
-if "end_time" not in st.session_state:
-    st.session_state.end_time = None
+if "current_mission" not in st.session_state:
+    st.session_state.current_mission = 1
+if "finished" not in st.session_state:
+    st.session_state.finished = False
 
-# -------------------
-# 타이틀 + 진행 상황 표시
-# -------------------
-st.title("🌊 기후 탐험 미션 챌린지")
-progress_text = f"현재 미션: {st.session_state.mission}/4"
-st.markdown(f"<h4 style='color:black'>{progress_text}</h4>", unsafe_allow_html=True)
+# --- 헤더 ---
+st.title("🌊 기후 데이터 탐험 미션")
 
-# -------------------
-# 팀 이름 입력 (처음 한 번)
-# -------------------
-if st.session_state.team_name == "":
-    team = st.text_input("팀 이름을 입력하세요", key="team_input")
+# 진행상황 표시
+if st.session_state.team_name:
+    st.subheader(f"팀명: {st.session_state.team_name} | 현재 미션: {st.session_state.current_mission}/4")
+
+# --- 팀 이름 입력 ---
+if not st.session_state.team_name:
+    team = st.text_input("팀 이름을 입력하세요")
     if st.button("시작하기"):
-        if team.strip() != "":
+        if team.strip():
             st.session_state.team_name = team
             st.session_state.start_time = time.time()
-            st.experimental_rerun()
-else:
-    st.write(f"**팀 이름:** {st.session_state.team_name}")
+            st.rerun()
 
-# -------------------
-# 미션 1: 데이터 탐색
-# -------------------
-if st.session_state.team_name and st.session_state.mission == 1:
-    st.markdown("<div class='mission-card'>", unsafe_allow_html=True)
-    st.subheader("미션 1: 데이터 탐험")
-    st.write("아래 표는 특정 기후 지수 데이터입니다. 전체 데이터를 살펴보고 질문에 답하세요.")
+# --- 미션 1 ---
+elif st.session_state.current_mission == 1:
+    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
+    st.header("미션 1: 데이터 탐색")
+    st.write("다음 표는 바다 표면 온도 데이터를 나타냅니다. 아래 질문에 답하세요.")
     
-    # 데이터 전체 표시
-    st.dataframe(df[['날짜', '지수']])
-
-    # 슬라이더로 연도 필터링
-    min_year, max_year = int(df['date'].dt.year.min()), int(df['date'].dt.year.max())
-    year_range = st.slider("연도 범위를 선택하세요", min_year, max_year, (min_year, max_year))
-    filtered = df[(df['date'].dt.year >= year_range[0]) & (df['date'].dt.year <= year_range[1])]
-    st.write(f"선택한 범위 데이터 개수: {len(filtered)}")
-
-    # 정답 입력
-    st.write("질문: 전체 데이터에서 가장 큰 지수 값은 얼마입니까?")
-    ans1 = st.text_input("정답 입력", key="answer1")
-
-    if st.button("제출 (미션 1)"):
-        correct = df['지수'].max()
-        if ans1.strip() == str(correct):
+    # 전체 데이터 표시
+    st.dataframe(df.head(15))
+    
+    # 질문
+    st.write("질문: 1998년 7월의 바다 표면 온도는 몇 도였나요?")
+    answer = st.text_input("정답을 입력하세요 (소수점 한 자리까지)")
+    
+    if st.button("정답 제출"):
+        correct_value = round(df[(df['Year'] == 1998) & (df['Month'] == 7)]['온도'].values[0], 1)
+        if answer.strip() == str(correct_value):
             st.success("정답입니다! 다음 미션으로 이동합니다.")
-            st.session_state.mission = 2
-            st.experimental_rerun()
+            st.session_state.current_mission = 2
+            st.rerun()
         else:
-            st.error("틀렸습니다. 다시 시도하세요.")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# -------------------
-# 미션 2: 그래프 해석
-# -------------------
-elif st.session_state.mission == 2:
-    st.markdown("<div class='mission-card'>", unsafe_allow_html=True)
-    st.subheader("미션 2: 시각화 분석")
-    st.write("아래 그래프를 보고 질문에 답하세요.")
+            st.error("틀렸습니다. 다시 시도해보세요!")
     
-    fig = px.line(df, x='date', y='지수', title="기후 지수 변화 추이")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 미션 2 ---
+elif st.session_state.current_mission == 2:
+    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
+    st.header("미션 2: 온도 변화 시각화")
+    st.write("아래 그래프는 특정 연도의 온도 변화를 보여줍니다. 연도를 선택하세요.")
+    
+    min_year, max_year = int(df['Year'].min()), int(df['Year'].max())
+    year_selected = st.slider("연도를 선택하세요", min_year, max_year, 2000)
+    
+    filtered = df[df['Year'] == year_selected]
+    fig = px.line(filtered, x="date", y="온도", title=f"{year_selected}년 월별 바다 표면 온도")
     st.plotly_chart(fig)
-
-    ans2 = st.text_input("질문: 데이터에서 지수 값이 양수인 달은 몇 개입니까?", key="answer2")
-
-    if st.button("제출 (미션 2)"):
-        correct = (df['지수'] > 0).sum()
-        if ans2.strip() == str(correct):
+    
+    question = f"질문: {year_selected}년 중 가장 높은 온도는 몇 도인가요?"
+    st.write(question)
+    answer = st.text_input("정답을 입력하세요")
+    
+    if st.button("정답 제출"):
+        correct_value = round(filtered['온도'].max(), 1)
+        if answer.strip() == str(correct_value):
             st.success("정답입니다! 다음 미션으로 이동합니다.")
-            st.session_state.mission = 3
-            st.experimental_rerun()
+            st.session_state.current_mission = 3
+            st.rerun()
         else:
-            st.error("틀렸습니다. 다시 시도하세요.")
-    st.markdown("</div>", unsafe_allow_html=True)
+            st.error("틀렸습니다. 다시 시도하세요!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------
-# 미션 3: 조건 탐색
-# -------------------
-elif st.session_state.mission == 3:
-    st.markdown("<div class='mission-card'>", unsafe_allow_html=True)
-    st.subheader("미션 3: 조건 찾기")
-    st.write("지수가 1.0 이상인 첫 번째 날짜는 언제입니까? (YYYY-MM 형식으로 입력)")
-
-    ans3 = st.text_input("정답 입력", key="answer3")
-
-    if st.button("제출 (미션 3)"):
-        first_date = df[df['지수'] >= 1.0]['date'].min()
-        correct = first_date.strftime("%Y-%m")
-        if ans3.strip() == correct:
-            st.success("정답입니다! 마지막 미션으로 이동합니다.")
-            st.session_state.mission = 4
-            st.experimental_rerun()
+# --- 미션 3 ---
+elif st.session_state.current_mission == 3:
+    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
+    st.header("미션 3: 조건 검색")
+    st.write("슬라이더로 온도 조건을 설정하고 데이터를 확인하세요.")
+    
+    temp_min, temp_max = float(df['온도'].min()), float(df['온도'].max())
+    temp_range = st.slider("온도 범위를 선택하세요", temp_min, temp_max, (temp_min, temp_max))
+    
+    filtered = df[(df['온도'] >= temp_range[0]) & (df['온도'] <= temp_range[1])]
+    st.write(f"조건에 맞는 데이터 개수: {len(filtered)}")
+    
+    st.dataframe(filtered.head(10))
+    
+    st.write("질문: 조건을 (24~26도)로 설정했을 때 데이터는 몇 개?")
+    answer = st.text_input("정답을 입력하세요 (숫자)")
+    
+    if st.button("정답 제출"):
+        correct_count = len(df[(df['온도'] >= 24) & (df['온도'] <= 26)])
+        if answer.strip() == str(correct_count):
+            st.success("정답입니다! 다음 미션으로 이동합니다.")
+            st.session_state.current_mission = 4
+            st.rerun()
         else:
-            st.error("틀렸습니다. 다시 시도하세요.")
-    st.markdown("</div>", unsafe_allow_html=True)
+            st.error("틀렸습니다. 다시 시도하세요!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------
-# 미션 4: 평균 계산
-# -------------------
-elif st.session_state.mission == 4:
-    st.markdown("<div class='mission-card'>", unsafe_allow_html=True)
-    st.subheader("미션 4: 평균 계산")
-    st.write("슬라이더로 연도 범위를 선택하고, 그 기간의 평균 지수 값을 입력하세요.")
-
-    year_range = st.slider("연도 선택", min_year, max_year, (min_year, max_year), key="slider_final")
-    filtered = df[(df['date'].dt.year >= year_range[0]) & (df['date'].dt.year <= year_range[1])]
-    st.write(f"선택된 기간의 데이터 개수: {len(filtered)}")
-
-    ans4 = st.text_input("평균값 입력 (소수점 2자리까지)", key="answer4")
-
-    if st.button("제출 (미션 4)"):
-        correct = round(filtered['지수'].mean(), 2)
-        if ans4.strip() == str(correct):
-            st.success("모든 미션 완료!")
+# --- 미션 4 ---
+elif st.session_state.current_mission == 4:
+    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
+    st.header("미션 4: 전체 평균 계산")
+    st.write("전체 기간의 평균 바다 표면 온도를 구하세요.")
+    
+    answer = st.text_input("정답을 입력하세요 (소수점 한 자리까지)")
+    
+    if st.button("정답 제출"):
+        correct_value = round(df['온도'].mean(), 1)
+        if answer.strip() == str(correct_value):
+            st.success("축하합니다! 모든 미션 완료!")
+            st.session_state.finished = True
             st.session_state.end_time = time.time()
-            duration = round((st.session_state.end_time - st.session_state.start_time) / 60, 2)
-            st.write(f"총 소요 시간: {duration}분")
+            st.rerun()
         else:
-            st.error("틀렸습니다. 다시 시도하세요.")
-    st.markdown("</div>", unsafe_allow_html=True)
+            st.error("틀렸습니다. 다시 시도하세요!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 완료 화면 ---
+elif st.session_state.finished:
+    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
+    st.header("🎉 모든 미션 완료!")
+    total_time = round(st.session_state.end_time - st.session_state.start_time, 1)
+    st.write(f"총 소요 시간: {total_time}초")
+    st.markdown('</div>', unsafe_allow_html=True)
