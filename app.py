@@ -264,42 +264,50 @@ elif st.session_state.mission == 3:
 # -----------------------
 # 미션 4 (새로운 분석형)
 # -----------------------
-elif st.session_state.mission == 4:
+if st.session_state.mission == 4:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("미션 4️⃣ : 가장 강한 엘니뇨가 있었던 연도는?")
+    st.subheader("미션 4️⃣ : 가장 강한 라니냐가 있었던 연도는?")
 
-    # 연도 범위 선택 슬라이더
-    yr = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
+    # ✅ 연도 범위 선택 슬라이더
+    min_year = int(df["Year"].min())
+    max_year = int(df["Year"].max())
+    yr_range = st.slider("연도 범위 선택", min_year, max_year, (min_year, max_year))
 
-    # 선택된 범위의 데이터 필터링
-    filt = df_display[(df_display["Year"] >= yr[0]) & (df_display["Year"] <= yr[1])]
+    # ✅ 선택된 범위 데이터 필터링
+    filt = df[(df["Year"] >= yr_range[0]) & (df["Year"] <= yr_range[1])]
     if len(filt) > 0:
-        # 연도별 최대 지수 계산
-        yearly_max = filt.groupby("Year")["지수"].max().reset_index()
+        # ✅ 연도별 최소 ONI index (라니냐는 음수가 크니까 min값)
+        yearly_min = filt.groupby("Year")["ONI index"].min().reset_index()
 
-        # 꺾은선 그래프 생성
-        fig4 = px.line(yearly_max, x="Year", y="지수", title="연도별 최대 지수 (가장 강한 엘니뇨 후보)", markers=True)
+        # ✅ 꺾은선 그래프 생성
+        fig4 = px.line(yearly_min, x="Year", y="ONI index",
+                       title="연도별 최소 ONI 지수 (가장 강한 라니냐 후보)",
+                       markers=True,
+                       labels={"ONI index": "ONI 지수", "Year": "연도"})
 
-        # 엘니뇨 / 라니냐 기준선 추가
-        fig4.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="엘니뇨 기준 (+0.5)", annotation_position="bottom right")
-        fig4.add_hline(y=-0.5, line_dash="dash", line_color="blue", annotation_text="라니냐 기준 (-0.5)", annotation_position="top right")
-      
-       # Y축 범위 고정 (-3 ~ 3)
+        # ✅ 엘니뇨 / 라니냐 기준선 추가
+        fig4.add_hline(y=0.5, line_dash="dash", line_color="red",
+                       annotation_text="엘니뇨 기준 (+0.5)", annotation_position="bottom right")
+        fig4.add_hline(y=-0.5, line_dash="dash", line_color="blue",
+                       annotation_text="라니냐 기준 (-0.5)", annotation_position="top right")
+
+        # ✅ Y축 범위 (-3 ~ 3)
         fig4.update_yaxes(range=[-3, 3])
 
-      
-        # 그래프 표시
+        # ✅ 그래프 표시
         st.plotly_chart(fig4, use_container_width=True)
 
-        # 데이터 테이블
-        st.dataframe(yearly_max)
+        # ✅ 데이터 테이블
+        st.dataframe(yearly_min)
 
-        # 정답 계산: 선택 구간에서 가장 큰 지수의 연도
-        strongest_year = int(yearly_max.loc[yearly_max["지수"].idxmax(), "Year"])
+        # ✅ 정답 계산: 선택 구간에서 가장 작은 ONI 지수의 연도
+        strongest_year = int(yearly_min.loc[yearly_min["ONI index"].idxmin(), "Year"])
 
-        st.write("질문: 이 기간 동안 가장 강한 엘니뇨(지수가 가장 높은) 연도는?")
-        a4 = st.text_input("정답 입력 (예: 1997)")
-        if st.button("제출 (미션 4)"):
+        # ✅ 질문 & 입력 (key를 고유하게 변경)
+        st.write("질문: 이 기간 동안 가장 강한 라니냐(ONI 지수가 가장 낮은) 연도는?")
+        a4 = st.text_input("정답 입력 (예: 1988)", key="mission4_answer")
+
+        if st.button("제출 (미션 4)", key="submit_mission4"):
             if a4.strip() == str(strongest_year):
                 st.success("정답입니다! 모든 미션을 완료했습니다.")
                 st.balloons()
@@ -321,22 +329,19 @@ elif st.session_state.mission == 4:
 elif st.session_state.finished:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("🎉 미션 완료")
+
+    # ✅ 총 소요 시간 계산
     dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
-    m = int(dur_sec // 60); s = int(dur_sec % 60)
-    st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
-    st.markdown("</div>", unsafe_allow_html=True)
-elif st.session_state.finished:
-    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
-    st.subheader("🎉 미션 완료")
-    dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
-    m = int(dur_sec // 60); s = int(dur_sec % 60)
+    m = int(dur_sec // 60)
+    s = int(dur_sec % 60)
     st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
 
     st.write("마지막 단계: 암호를 입력하세요.")
-    code = st.text_input("최종 암호")
-    if st.button("암호 해독"):
+    code = st.text_input("최종 암호", key="final_code")
+
+    if st.button("암호 해독", key="decode_btn"):
         if code.strip().upper() == "ENSO":
-            st.success("🎯 암호해독 성공!")
+            st.success("🎯 암호 해독 성공! 미션 완전 완료!")
             st.balloons()
         else:
             st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
