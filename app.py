@@ -179,13 +179,6 @@ if st.session_state.mission == 1:
     y_min_avg = filtered["nino3.4 수온 평균"].min() - 1
     y_max_avg = filtered["nino3.4 수온 평균"].max() + 1
 
-    # (2) 평년평균 → 변동성 기반으로 범위 조정
-    clim_range = filtered["nino3.4 수온 평년평균"].max() - filtered["nino3.4 수온 평년평균"].min()
-    if clim_range == 0:
-        clim_range = 0.1
-    padding = clim_range * 0.2
-    y_min_clim = filtered["nino3.4 수온 평년평균"].min() - padding
-    y_max_clim = filtered["nino3.4 수온 평년평균"].max() + padding
 
     # ✅ 첫 번째 그래프: 수온 평균
     fig_avg = px.line(filtered, x="date", y="nino3.4 수온 평균",
@@ -195,21 +188,11 @@ if st.session_state.mission == 1:
     fig_avg.update_layout(yaxis=dict(range=[y_min_avg, y_max_avg]))
     st.plotly_chart(fig_avg, use_container_width=True)
 
-    # ✅ 두 번째 그래프: 수온 평년평균
-    fig_clim = px.line(filtered, x="date", y="nino3.4 수온 평년평균",
-                       labels={"nino3.4 수온 평년평균": "수온 평년평균(°C)", "date": "날짜"},
-                       title=f"{selected_month}월 Nino3.4 해역 수온 평년평균 변화")
-    fig_clim.update_traces(mode="lines+markers")
-    fig_clim.update_layout(yaxis=dict(range=[y_min_clim, y_max_clim]))
-    st.plotly_chart(fig_clim, use_container_width=True)
 
     # ✅ 질문 추가
     st.markdown("#### 질문")
     st.write(f"1️⃣ 언제 Nino3.4 해역에서 **{selected_month}월의 수온 평균값**이 가장 높았나요? (예: 2024년)")
     q1_answer = st.text_input("정답 입력 (질문 1)", key="mission1_q1")
-
-    st.write(f"2️⃣ 언제 Nino3.4 해역에서 **{selected_month}월의 수온 평년평균값**이 가장 높았나요? (예: 2004년)")
-    q2_answer = st.text_input("정답 입력 (질문 2)", key="mission1_q2")
 
     # ✅ 제출 버튼
     if st.button("제출 (미션 1)"):
