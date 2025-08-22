@@ -84,17 +84,17 @@ max_year = int(df_display["Year"].max())
 # -----------------------
 # 스타일
 # -----------------------
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] {
-  background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e");
-  background-size: cover;
-  background-position: center;
-}
-[data-testid="stHeader"] { background: rgba(0,0,0,0); }
-.mission-card { background: rgba(255,255,255,0.85); padding:20px; border-radius:16px; margin-bottom:20px; }
-</style>
-""", unsafe_allow_html=True)
+#st.markdown("""
+#<style>
+#[data-testid="stAppViewContainer"] {
+#  background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e");
+#  background-size: cover;
+#  background-position: center;
+#}
+#[data-testid="stHeader"] { background: rgba(0,0,0,0); }
+#.mission-card { background: rgba(255,255,255,0.85); padding:20px; border-radius:16px; margin-bottom:20px; }
+#</style>
+#""", unsafe_allow_html=True)
 
 # -----------------------
 # 페이지 흐름
@@ -104,8 +104,16 @@ st.markdown("""
 if st.session_state.mission == 0:
     st.title("🕵️‍♀️ 엘니뇨 사건 파일: 기후의 흔적을 찾아라")
     st.markdown("""
-    세계 기후를 흔드는 정체불명의 힘, **엘니뇨와 라니냐**.  
-    최근 지구 곳곳에서 이상 기후 현상이 보고되고 있습니다.  
+    **세계 기후를 흔드는 정체불명의 힘**이 있다는 보고가 있었습니다.
+    최근 지구 곳곳에서 이상 기후 현상이 보고되고 있습니다.
+     **2023년** 
+    아시아, 아프리카, 남미지역에서 농업 생산량이 감소하고 물이 부족해지는 현상이 나타났습니다.
+    이때문에 '기후플레이션'이라 불리는 식량가격 상승이 일어났어요.
+    **2020년**
+    아시아 지역에서 한파와 폭우가 나타났습니다.
+    중국과 인동서는 기록적인 폭설과 홍수로 인해 수천명이 피해를 입었습니다.
+    **한국에서**
+    
     **기후 수사국**은 당신에게 중요한 임무를 맡겼습니다.  
 
     🌊 **미션:**  
