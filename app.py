@@ -10,22 +10,49 @@ st.set_page_config(page_title="기후 데이터 미션 챌린지", layout="wide"
 
 CSS = """
 <style>
-[data-testid="stAppViewContainer"]{
-  background-image:url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e");
-  background-size:cover;background-position:center;
+/* 전체 배경 이미지 */
+[data-testid="stAppViewContainer"] {
+  background-image: url("https://images.unsplash.com/photo-1507525428034-b723cf961d3e");
+  background-size: cover;
+  background-position: center;
 }
-[data-testid="stHeader"]{background:rgba(0,0,0,0);}
-.mission-card{
-  background:rgba(255,255,255,.85);padding:20px;border-radius:16px;margin-bottom:20px;color:#111;
+
+/* 헤더 완전 투명 */
+[data-testid="stHeader"] {
+  background: rgba(0, 0, 0, 0);
 }
-.stButton button{
-  background:#111 !important;color:#fff !important;font-weight:700;border-radius:10px;padding:8px 16px;
+
+/* 기본 컨테이너의 흰색 배경 제거 */
+[data-testid="block-container"] {
+  background: rgba(0, 0, 0, 0) !important;
+  padding-top: 0rem !important; /* 상단 여백 최소화 */
+}
+
+/* 미션 카드 스타일 */
+.mission-card {
+  background: rgba(255, 255, 255, 0.85);
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  color: #111;
+}
+
+/* 버튼 스타일 */
+.stButton button {
+  background: #111 !important;
+  color: #fff !important;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 8px 16px;
+  border: none;
 }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
+# 타이틀 유지
 st.title("🌊 기후 데이터 탐험 미션")
+
 
 # -----------------------
 # 데이터 로드 (GitHub URL)
