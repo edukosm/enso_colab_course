@@ -147,16 +147,43 @@ if not st.session_state.team_name:
 else:
     st.caption(f"현재 팀: **{st.session_state.team_name}**")
 
+
+# ✅ 가장 위에 배치
+if st.session_state.finished:
+    # 완료화면 표시
+    st.markdown('<div class="mission-card">', unsafe_allow_html=True)
+    st.subheader("🎉 미션 완료")
+
+    dur_sec = (st.session_state.end_time - st.session_state.start_time) if st.session_state.start_time else 0
+    m = int(dur_sec // 60)
+    s = int(dur_sec % 60)
+    st.write(f"✅ **총 소요 시간: {m}분 {s}초**")
+
+    st.write("마지막 단계: 암호를 입력하세요.")
+    code = st.text_input("최종 암호", key="final_code")
+
+    if st.button("암호 해독", key="decode_btn"):
+        if code.strip().upper() == "ENSO":
+            st.success("🎯 암호 해독 성공! 미션 완전 완료!")
+            st.balloons()
+        else:
+            st.error("❌ 암호가 틀렸습니다. 다시 시도하세요.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+# ✅ 그 아래에 미션 조건들
 # -----------------------
 # 미션 1
 # -----------------------
-if st.session_state.mission == 1:
+elif st.session_state.mission == 1:
     st.markdown('<div class="mission-card">', unsafe_allow_html=True)
     st.subheader("미션 1️⃣ : Nino3.4 해역과 수온 데이터 탐색")
 
     # ✅ 월 선택
     months = list(range(1, 13))
-    selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=0)  # 기본값 8월
+    selected_month = st.selectbox("📅 분석할 월을 선택하세요", months, index=0)  # 기본값 1월
 
     # ✅ 연도 범위 슬라이더
     min_year = int(df["Year"].min())
@@ -181,7 +208,7 @@ if st.session_state.mission == 1:
 
     # ✅ 질문 추가 (1개만)
     st.markdown("#### 질문")
-    st.write(f"1️⃣ 언제 Nino3.4 해역에서 8월의 수온 평균값**이 가장 높았나요? (예: 2024년)")
+    st.write(f"1️⃣ 언제 Nino3.4 해역에서 8월의 수온 평균값이 가장 높았나요? (예: 2024년)")
     q1_answer = st.text_input("정답 입력", key="mission1_q1")
 
     # ✅ 제출 버튼
